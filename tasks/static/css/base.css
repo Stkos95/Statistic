@@ -1,0 +1,154 @@
+/** {*/
+/*    border: 1px solid red;*/
+
+/*}*/
+
+body {
+    margin: 0;
+    background-color: papayawhip;
+}
+
+#logo_img {
+    height: 50px;
+    display: block;
+}
+
+#header {
+    background: #4dcc43;
+    overflow: auto;
+    padding: 5px 20px;
+    border-bottom: 6px solid #3fad37;
+    margin: 0 0 0 0;
+    /*height: 50px;*/
+
+}
+
+#logo {
+    float: left;
+    margin-right: 20px;
+}
+
+#name {
+    margin: 5px;
+    float: left;
+}
+
+
+#header ul.menu {
+    list-style: none;
+    float: left;
+}
+
+#header ul.menu li {
+    float: left;
+    margin-left: 15px;
+}
+
+#time {
+    background-color: darkolivegreen;
+    width: 100%;
+    /*float: left;*/
+    overflow: auto;
+
+
+}
+
+#time ul.dates_list {
+    list-style: none;
+    float: left;
+    white-space: nowrap;
+    padding: 0;
+    margin: 0;
+
+}
+
+
+#time ul.dates_list li {
+    display: inline;
+    margin-left: 15px;
+
+
+}
+
+.categories {
+
+    display: inline-block;
+}
+
+.categories h2 {
+
+    margin: 10px;
+}
+
+
+ul.categories {
+    padding-left: 20px;
+    list-style: none;
+}
+
+.categories li {
+    margin-bottom: 15px;
+    border-bottom: 2px;
+    /*padding-right: 5px;*/
+    background-color: #3fad37;
+    border-radius: 10px;
+    padding: 10px 15px 10px 15px;
+    box-sizing: content-box;
+    height: 30px;
+
+
+}
+
+ul.task_item {
+    list-style: none;
+    display: inline-block;
+    width: 40%;
+    position: absolute;
+
+}
+
+ul.task_item li {
+    background-color: aqua;
+    margin-bottom: 50px;
+    padding: 10px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    min-height: 40px;
+}
+
+ul.task_item li p {
+    font-size: 0.75rem;
+    color: gray;
+}
+
+ul.task_item li span {
+    display: inline-block;
+    float: right;
+    color: red;
+    font-size: 0.75rem;
+}
+
+.detail {
+    padding-left: 20px;
+    background-color: cyan;
+    width: 400px;
+
+    margin:10px auto;
+    border-radius: 50px;
+    height: auto;
+    padding: 40px;
+
+    box-sizing: border-box;
+    /*white-space: pre-line;*/
+
+
+}
+
+.detail h2 {
+    text-align: center;
+}
+
+div.detail p:nth-child(2) {
+    line-height: 1.5em;
+
+}

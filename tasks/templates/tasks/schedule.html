@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load my_tags %}
+{% block content %}
+<div id="time">
+    <ul class="dates_list">
+        <li>
+            <a href="{% url 'schedule' %}">Все</a>
+        </li>
+        {% get_dates as dates %}
+        {% for task in dates %}
+            <li>
+                <a href='{% url "schedule_time" task.deadline|date:"d-m-Y" %}'>
+                    {{ task.deadline|date:"j E" }}
+                </a>
+            </li>
+
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="categories">
+<h2>Категории:</h2>
+<ul class="categories">
+    <li>
+        {% if not category_slug %}
+            Все
+        {% else %}
+        <a href="{% url 'schedule' %}">Все</a>
+        {% endif %}
+    </li>
+    <li>
+        {% if category_slug == 'empty' %}
+            Без категории
+        {% else %}
+
+            <a href="{% url 'schedule_category' 'empty' %}">Без категории</a>
+        {% endif %}
+    </li>
+    {% for cat in all_categories %}
+        <li>
+            {% if cat.slug == category_slug %}
+                {{ cat.name }}
+            {% else %}
+                <a href="{{ cat.get_absolute_url }}">{{ cat.name }}</a>
+            {% endif %}
+        </li>
+    {% endfor %}
+
+</ul>
+</div>
+
+    <ul class="task_item">
+    {% for task in tasks %}
+        <li>
+            {{ forloop.counter }})
+            <a href="{{ task.get_absolute_url }}">{{ task.name }}</a>
+            {% if task.deadline %}
+                <span>{{ task.deadline }}</span>
+            {% endif %}
+            <p>{{ task.description|truncatewords:4 }}</p>
+        </li>
+
+
+    {% endfor %}
+    </ul>
+
+
+{% endblock %}
