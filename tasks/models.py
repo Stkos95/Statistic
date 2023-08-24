@@ -13,15 +13,19 @@ class Category(models.Model):
     def get_absolute_url(self):
         return reverse('schedule_category', args=[self.slug])
 
+    def __str__(self):
+        return self.name
+
 
 class Task(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, verbose_name='Название')
     description = models.TextField(blank=True, null=True, default='')
     done = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     deadline = models.DateTimeField(blank=True, null=True)
     category = models.ForeignKey(Category,
                                  related_name='tasks',
+
                                  on_delete=models.CASCADE,
                                  null=True,
                                  blank=True)
@@ -34,3 +38,6 @@ class Task(models.Model):
         return reverse('task_detail', args=[self.id])
 
 
+
+# class Test(models.Model):
+#     timing = models.DateTimeField()

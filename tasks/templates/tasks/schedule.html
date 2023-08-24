@@ -7,10 +7,10 @@
             <a href="{% url 'schedule' %}">Все</a>
         </li>
         {% get_dates as dates %}
-        {% for task in dates %}
+        {% for date in dates %}
             <li>
-                <a href='{% url "schedule_time"  category_slug task.deadline|date:"d-m-Y" %}'>
-                    {{ task.deadline|date:"j E" }}
+                <a href='{% url "schedule_time"  category_slug date.deadline|date:"d-m-Y" %}'>
+                    {{ date.deadline|date:"j E" }}
                 </a>
             </li>
 
@@ -64,5 +64,5 @@
     {% endfor %}
     </ul>
 
-
+<a id='create_task' href="{% url 'task_create' category_slug %}">Создать новую задачу.</a>
 {% endblock %}

@@ -1,1 +1,4 @@
 venv/
+*/migrations
+tasks/__pycache__
+test.*
