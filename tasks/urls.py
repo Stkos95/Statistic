@@ -5,7 +5,8 @@ from . import views
 
 
 urlpatterns = [
-    path('test/', views.Test.as_view(), name='test'),
+    # path('test/', views.TestDate.as_view(), name='test'),
+    path('test1/', views.Test.as_view(), name='test'),
     path('schedule/<int:task_id>/', views.task_detail, name='task_detail'),
     path('schedule/', views.schedule_redirect, name='schedule'),
     path('schedule/<slug:category_slug>/', views.schedule, name='schedule_category'),

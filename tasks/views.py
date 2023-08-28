@@ -1,9 +1,15 @@
 from django.http import HttpRequest, HttpResponse, Http404
 from django.views import View
 from django.shortcuts import render, get_object_or_404, redirect
+from django.views.generic.base import TemplateResponseMixin
+from django.views.generic.dates import DateMixin, BaseDateListView, ArchiveIndexView
+
 from .models import Task, Category
+from django.views.generic import DetailView
 from .forms import AddTaskForm
 import datetime
+
+from django.views.generic.list import ListView
 
 menu = [{'name': "Schedule", 'link': '#'},
         {'name': 'About', 'link': '#'}]
@@ -58,4 +64,27 @@ def create_task(request, category_slug):
     # form = TestForm()
     return render(request, 'tasks/create.html', {'form': form,
                                                  'category': category_slug})
+
+
+# class Test(BaseDateListView, TemplateResponseMixin):
+#     model = Task
+#     date_field = 'created'
+#     # allow_future = True
+#     template_name = 'task/task_list.html'
+#
+#     def get_dated_items(self):
+#
+#         date_list = Task.objects.values(self.date_field)
+#         object_list = Task.objects.all()
+#         return date_list, object_list, None
+#
+
+
+class Test(ArchiveIndexView):
+    date_field = 'created'
+    model = Task
+    allow_future = True
+    template_name = 'tasks/schedule.html'
+    date_list_period = 'day'
+    # context_object_name = 'tasks'
 
