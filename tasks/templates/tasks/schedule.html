@@ -1,33 +1,18 @@
 {% extends "base.html" %}
 {% load my_tags %}
 {% block content %}
-<!--<div id="time">-->
-<!--    <ul class="dates_list">-->
-<!--        <li>-->
-<!--            <a href="{% url 'schedule' %}">Все</a>-->
-<!--        </li>-->
-<!--        {% get_dates as dates %}-->
-<!--        {% for date in dates %}-->
-<!--            <li>-->
-<!--                <a href='{% url "schedule_time"  category_slug date.deadline|date:"d-m-Y" %}'>-->
-<!--                    {{ date.deadline|date:"j E" }}-->
-<!--                </a>-->
-<!--            </li>-->
-
-<!--        {% endfor %}-->
-<!--    </ul>-->
-<!--</div>-->
 
 <div id="time">
     <ul class="dates_list">
         <li>
-            <a href="{% url 'schedule' %}">Все</a>
+            <a href="{% url 'schedule_category' category_slug %}">Все</a>
         </li>
+<!--        {% get_dates as dates %}-->
         {% for d in date_list %}
             <li>
-<!--                <a href='{% url "schedule_time"  category_slug d.deadline|date:"d-m-Y" %}'>-->
-                    {{ d }}
-<!--                </a>-->
+                <a href="{% url 'schedule_time' category_slug d|date:'Y-m-d' %} ">
+                    {{ d|date:"Y-m-d" }}
+                </a>
             </li>
 
         {% endfor %}
@@ -80,9 +65,5 @@
     {% endfor %}
     </ul>
 
-<a id='create_task' href="{% url 'task_create' category_slug %}">Создать новую задачу.</a>
 
-{% for i in date_list %}
-{{ i }}
-{% endfor %}
 {% endblock %}

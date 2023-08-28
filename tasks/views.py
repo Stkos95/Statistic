@@ -16,7 +16,7 @@ menu = [{'name': "Schedule", 'link': '#'},
 
 
 def schedule_redirect(request):
-    return redirect('schedule_category', category_slug='all')
+    return redirect('schedule_category', slug='all')
 
 
 def schedule(request, category_slug, date=None):
@@ -31,7 +31,7 @@ def schedule(request, category_slug, date=None):
 
     if date:
         d = '-'.join(date.split('-')[::-1])
-        all_tasks = all_tasks.filter(deadline__date=d)
+        all_tasks = all_tasks.filter(deadline__date=date)
 
     return render(request, 'tasks/schedule.html', {'tasks': all_tasks,
                                                    'section': 'schedule',
@@ -66,25 +66,42 @@ def create_task(request, category_slug):
                                                  'category': category_slug})
 
 
-# class Test(BaseDateListView, TemplateResponseMixin):
-#     model = Task
-#     date_field = 'created'
-#     # allow_future = True
-#     template_name = 'task/task_list.html'
-#
-#     def get_dated_items(self):
-#
-#         date_list = Task.objects.values(self.date_field)
-#         object_list = Task.objects.all()
-#         return date_list, object_list, None
-#
-
 
 class Test(ArchiveIndexView):
-    date_field = 'created'
+    date_field = 'deadline'
     model = Task
     allow_future = True
     template_name = 'tasks/schedule.html'
     date_list_period = 'day'
-    # context_object_name = 'tasks'
+    context_object_name = 'tasks'
+    allow_empty = True
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['category_slug'] = self.kwargs['slug']
+        context['all_categories'] = Category.objects.all()
+        return context
+
+    def get_queryset(self):
+        all_tasks = Task.objects.all()
+        cs = self.kwargs['slug']
+        if cs == 'empty':
+            all_tasks = all_tasks.filter(category__isnull=True)
+
+        elif cs != 'empty' and cs != 'all':
+
+            all_tasks = all_tasks.filter(category__slug=cs)
+        date = self.kwargs.get('date', None)
+        if date:
+            print(date)
+            all_tasks.filter(deadline=date)
+            print(all_tasks)
+            print('hello')
+
+        return all_tasks
+
+
+
+
+
 
