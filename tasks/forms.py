@@ -14,3 +14,8 @@ class AddTaskForm(forms.ModelForm):
         model = Task
         fields = '__all__'
         exclude = ['created', 'done']
+
+    def is_valid(self):
+        print(f'{self.errors=}')
+        return super().is_valid()
+

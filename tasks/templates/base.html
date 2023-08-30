@@ -20,8 +20,19 @@
                     <li {% if section == "about" %}class="selected"{% endif %}'>
                         <a href="{% url 'about' %}">About</a>
                     </li>
+                {% if request.user.is_authenticated %}
+                <li class="last">{{ user.username }} | <a href="{% url 'logout' %}">Выйти</a></li>
+                {% else %}
+                    <li class="last"><a href="{% url 'registration' %}">Регистрация</a> | <a href="{% url 'login' %}">Войти</a></li>
+                {% endif %}
+
             </ul>
+
+
+
+
     </div>
+
 {% block content %}
 {% endblock %}
 

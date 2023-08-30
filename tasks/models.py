@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-
+from django.contrib.auth.models import User
 
 class DataManager(models.Manager):
     def get_queryset(self):
@@ -29,7 +29,11 @@ class Task(models.Model):
                                  on_delete=models.CASCADE,
                                  null=True,
                                  blank=True)
-
+    user = models.ForeignKey(User,
+                             related_name='user_tasks',
+                             on_delete=models.CASCADE,
+                             null=True,
+                             blank=True)
     objects = models.Manager()
     dates = DataManager()
 
