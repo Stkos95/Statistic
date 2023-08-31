@@ -1,5 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
+
+from .forms import CustomUserCreationForm
+
 from django.http import HttpRequest, HttpResponse, Http404
 from django.views import View
 from django.shortcuts import render, get_object_or_404, redirect
@@ -53,6 +56,12 @@ class CreateTask(CreateView):
         context['category'] = self.kwargs.get('slug')
         return context
 
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+
+
 
 def home(request):
     if request.user.is_authenticated:
@@ -67,13 +76,13 @@ class Test1(View):
         return HttpResponse('А теперь вы авторизованы! :)')
 
 
-class Test(LoginRequiredMixin, ArchiveIndexView):
-    login_url = 'login'
-    date_field = 'deadline'
+class Test(ListView):
+    # login_url = 'login'
+    # date_field = 'deadline'
     model = Task
-    allow_future = True
+    # allow_future = True
     template_name = 'tasks/schedule.html'
-    date_list_period = 'day'
+    # date_list_period = 'day'
     context_object_name = 'tasks'
     allow_empty = True
 
@@ -81,17 +90,17 @@ class Test(LoginRequiredMixin, ArchiveIndexView):
         context = super().get_context_data(**kwargs)
         context['category_slug'] = self.kwargs['slug']
         context['all_categories'] = Category.objects.all()
+        print(context)
 
         return context
 
-    def get_date_list(self, queryset, date_type=None, ordering="ASC"):
-        qs = super().get_date_list(queryset, date_type, ordering)
-        print(qs)
-        return qs
 
     def get_queryset(self):
-        all_tasks = Task.objects.all()
+
+        all_tasks = Task.objects.filter(user=self.request.user)
+        logger.debug(f'{all_tasks=}')
         cs = self.kwargs['slug']
+        logger.debug(f'{cs=}')
         if cs == 'empty':
             all_tasks = all_tasks.filter(category__isnull=True)
 
@@ -101,7 +110,7 @@ class Test(LoginRequiredMixin, ArchiveIndexView):
         date = self.kwargs.get('date', None)
         if date:
             all_tasks = all_tasks.filter(deadline__date=date)
-
+        logger.debug(f'{all_tasks}')
         return all_tasks
 
 
@@ -110,15 +119,16 @@ class MyLoginView(LoginView):
 
 
 
-class RegistrationView(CreateView, FormView):
-    form_class = UserCreationForm
+class RegistrationView(CreateView):
+    form_class = CustomUserCreationForm
     template_name = 'registration/registration.html'
     success_url = '/'
 
     def form_invalid(self, form):
         print(f'{form.errors=}')
-        print(f'{form.non_field_errors()=}')
         return super().form_invalid(form)
+
+
 
 
 

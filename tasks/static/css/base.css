@@ -168,4 +168,8 @@ div.detail p:nth-child(2) {
     background-color: yellow;
 }
 
-
+.form-label {
+    display: inline-block;
+    min-width: 250px;
+    vertical-align: top;
+}

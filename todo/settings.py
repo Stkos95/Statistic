@@ -55,6 +55,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'todo.urls'
 
+AUTHENTICATION_BACKENDS = ['tasks.authentication.EmailBackend',
+                           'django.contrib.auth.backends.ModelBackend']
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

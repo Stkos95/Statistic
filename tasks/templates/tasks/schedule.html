@@ -2,6 +2,12 @@
 {% load my_tags %}
 {% block content %}
 
+{% if not user.is_authenticated %}
+    <h1>Вы не авторизованы!</h1>
+    <p>Пожалуйста, войдите на сайт, чтобы увидеть свои задачи и начать работу. <a href="{% url 'login' %}">Войти</a></p>
+    <p>Если у вас нет аккаунта: <a href="{% url 'registration' %}">Зарегистрироваться</a></p>
+{% else %}
+
 <div id="time">
     <ul class="dates_list">
         <li>
@@ -67,4 +73,5 @@
 
 <a id="create_task" href="{% url 'task_create' category_slug %}">Создать новую задачу в категории:{{ category_slug }}</a>
 
+{% endif %}
 {% endblock %}
