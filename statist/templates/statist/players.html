@@ -6,7 +6,7 @@
 <script src="{% static 'js/index.js' %}" defer></script>
  <h1>Игроки:</h1>
         <hr>
-        <form method="post" action="{% url 'statistic:home' %}" autocomplete="off">
+        <form method="post" action="{% url 'statistic:count' %}" autocomplete="off">
             {% csrf_token %}
             <div class="player">
                 <input  type="text" class="players" name="0">

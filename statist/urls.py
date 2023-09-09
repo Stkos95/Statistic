@@ -7,5 +7,6 @@ app_name = 'statistic'
 
 urlpatterns = [
     path('', views.PlayersView.as_view(), name='home'),
-    path('count/', views.CountStatistic.as_view(), name='count')
+    path('count/', views.CountStatisticView.as_view(), name='count'),
+    path('result/', views.ResultStatisticView.as_view(), name='result')
 ]

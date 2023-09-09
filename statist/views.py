@@ -51,27 +51,12 @@ class PlayersView(GroupRequiredMixin, TemplateView):
     group_name = 'Statistic'
     template_name = 'statist/players.html'
 
-
-    # def _get_correct_form(self):
-    #     actions = Actions.objects.filter(type=1)
-    #     test_form = TestForm()
-    #     for action in actions:
-    #         setattr(test_form,f'{action.slug}', forms.IntegerField(label=f'{action.name}'))
-    #     return test_form
-
-
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     # form = self._get_correct_form()
-    #     # context['form'] = form
-    #     return context
-
     def get(self, request, *args, **kwargs):
-
         allow = self.check_group()
         if not allow and not self.request.user.is_staff:
             return HttpResponseForbidden(self.get_permission_denied_message())
         return super().get(request, *args, **kwargs)
+
 
     def get_template_names(self):
         if self.request.method == 'POST':
@@ -79,9 +64,15 @@ class PlayersView(GroupRequiredMixin, TemplateView):
         else:
             return super().get_template_names()
 
+
+
+
+
+class CountStatisticView(GroupRequiredMixin, TemplateView):
+    template_name = 'statist/statistic.html'
+
     def post(self, request, *args, **kwargs):
         players = [value for inx, value in request.POST.items() if inx.isdigit()]
-        # form = self._get_correct_form()
         actions = Actions.objects.filter(type=1)
         form = TestForm()
         for action in actions:
@@ -89,11 +80,9 @@ class PlayersView(GroupRequiredMixin, TemplateView):
         return self.render_to_response(
             context={'players': players,
                      'form': form})
-        # return  JsonResponse({'status': 'ok'})
 
 
-
-class CountStatistic(GroupRequiredMixin,TemplateView):
+class ResultStatisticView(GroupRequiredMixin,TemplateView):
     template_name = 'statistic/count.html'
 
     def post(self, request, *args, **kwargs):
