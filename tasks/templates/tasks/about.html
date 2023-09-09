@@ -1,8 +1,10 @@
 {% extends "base.html" %}
-
+{% load my_tags %}
 {% block title %}About{% endblock %}
 
 {% block content %}
 <h1>Hello</h1>
-{{ perms.tasks.task_view}}
+{{ user.get_all_permissions }}
+{{ user|is_in_group:'Test' }}
+
 {% endblock %}

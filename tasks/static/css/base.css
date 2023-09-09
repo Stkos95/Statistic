@@ -173,3 +173,13 @@ div.detail p:nth-child(2) {
     min-width: 250px;
     vertical-align: top;
 }
+
+
+div span:last-child {
+    color: red;
+    display: none;
+}
+
+span {
+    cursor: pointer;
+}

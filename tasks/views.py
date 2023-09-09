@@ -1,8 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
-
+from django.core.exceptions import PermissionDenied
+from django.views.generic.detail import SingleObjectMixin
+from django.contrib.auth.models import Group
 from .forms import CustomUserCreationForm
-
+from django.http import HttpResponseForbidden
 from django.http import HttpRequest, HttpResponse, Http404
 from django.views import View
 from django.shortcuts import render, get_object_or_404, redirect
@@ -10,8 +12,7 @@ from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.dates import DateMixin, BaseDateListView, ArchiveIndexView
 from django.contrib.auth.views import LoginView, LogoutView
 import logging
-from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
 
 from .models import Task, Category
 from django.views.generic import DetailView, CreateView, FormView
@@ -32,7 +33,6 @@ logger = logging.getLogger(__name__)
 
 
 def schedule_redirect(request: HttpRequest):
-    logger.warning('REDIRECTION')
     return redirect('schedule_category', slug='all')
 
 
@@ -86,11 +86,13 @@ class Test(ListView):
     context_object_name = 'tasks'
     allow_empty = True
 
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         context['category_slug'] = self.kwargs['slug']
         context['all_categories'] = Category.objects.all()
-        print(context)
 
         return context
 
@@ -98,9 +100,9 @@ class Test(ListView):
     def get_queryset(self):
 
         all_tasks = Task.objects.filter(user=self.request.user)
-        logger.debug(f'{all_tasks=}')
+
         cs = self.kwargs['slug']
-        logger.debug(f'{cs=}')
+
         if cs == 'empty':
             all_tasks = all_tasks.filter(category__isnull=True)
 
@@ -110,7 +112,7 @@ class Test(ListView):
         date = self.kwargs.get('date', None)
         if date:
             all_tasks = all_tasks.filter(deadline__date=date)
-        logger.debug(f'{all_tasks}')
+
         return all_tasks
 
 
@@ -125,10 +127,7 @@ class RegistrationView(CreateView):
     success_url = '/'
 
     def form_invalid(self, form):
-        print(f'{form.errors=}')
         return super().form_invalid(form)
-
-
 
 
 

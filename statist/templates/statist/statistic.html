@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+
+
+
+{% block content %}
+
+
+<h1>Подсчет статистики:</h1>
+<div class="statistic">
+    <form action="{% url 'statistic:count' %}" method="post">
+        {% csrf_token %}
+    {% for player in players %}
+        <div class="player">
+            <h5>{{ player }}</h5>
+            {% for f in form %}
+            <label for="{{ f.id_for_label }}">{{f.label}}</label>
+            {{ f }}
+            {% endfor %}
+        </div>
+    {% endfor %}
+    <input type="submit" value="Подтвердить">
+    </form>
+</div>
+
+
+<script>
+    const form = document.forms[0]
+    function submit(e) {
+        e.preventDefault()
+        let players = document.querySelectorAll('div.player')
+        for ( let player of players) {
+            let playerName = player.querySelector('h5').textContent
+            let fields = player.querySelectorAll('input')
+                for (let field of fields) {
+                    let name = field.name
+                    field.setAttribute('name', name + '_' + playerName)
+                }
+
+        }
+        console.log(form.action)
+        form.submit()
+
+    }
+    let button = document.querySelector('[type="submit"]')
+    button.addEventListener('click', submit)
+</script>
+
+{% endblock %}
