@@ -2,7 +2,7 @@ from django import forms
 from .models import Actions
 
 class TestForm(forms.Form):
-    pass
+    name = forms.CharField(max_length=100, label='Игрок')
 
 
 

@@ -1,26 +1,30 @@
 {% extends 'base.html' %}
-
+{% load static %}
 
 
 
 {% block content %}
-
+<script src="{% static 'js/index.js' %}"></script>
 
 <h1>Подсчет статистики:</h1>
 <div class="statistic">
     <form action="{% url 'statistic:result' %}" method="post">
         {% csrf_token %}
-    {% for player in players %}
-        <div class="player">
-            <h5>{{ player }}</h5>
-            {% for f in form %}
-            <label for="{{ f.id_for_label }}">{{f.label}}</label>
-            {{ f }}
-            {% endfor %}
+        <div class="player_form">
+        {% for field in form %}
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+
+
+
+        {% endfor %}
+        <span onclick="addPlayer(this)">+</span>
+        <span onclick="removePlayer(this)">-</span>
         </div>
-    {% endfor %}
+
     <input type="submit" value="Подтвердить">
     </form>
+
 </div>
 
 
@@ -45,5 +49,57 @@
     let button = document.querySelector('[type="submit"]')
     button.addEventListener('click', submit)
 </script>
+
+
+<script>
+    let elements = document.querySelectorAll('input.count-field')
+    let wrapper = document.createElement('div')
+    wrapper.setAttribute('class', 'wrapper')
+    for (let el of elements) {
+        let wr = wrapper.cloneNode()
+        el.parentNode.insertBefore(wr, el)
+        wr.appendChild(el)
+        el.insertAdjacentHTML('beforebegin', '<button class="minus-button" type="button">-</button>');
+        el.insertAdjacentHTML('afterend', '<button class="plus-button" type="button">+</button>');
+        // let bplus = document.createElement('button')
+        // let bminus = document.createElement('button')
+    }
+
+
+
+
+    const plusButton = document.querySelectorAll(".plus-button");
+    plusButton.forEach((btn) => {
+            btn.addEventListener('click', (element) =>{
+                let number = btn.previousElementSibling;
+
+                number.stepUp();
+                let change = new Event("change")
+                number.dispatchEvent(change)
+
+            })
+        }
+        )
+
+
+
+    const minusButton = document.querySelectorAll(".minus-button");
+    minusButton.forEach((btn) => {
+        btn.addEventListener('click', (element) =>{
+            let number = btn.nextElementSibling;
+
+            number.stepDown();
+            let change = new Event("change")
+            number.dispatchEvent(change)
+
+        })
+    }
+    )
+
+
+
+</script>
+
+
 
 {% endblock %}

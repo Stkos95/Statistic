@@ -71,15 +71,20 @@ class PlayersView(GroupRequiredMixin, TemplateView):
 class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
-    def post(self, request, *args, **kwargs):
-        players = [value for inx, value in request.POST.items() if inx.isdigit()]
+    def get(self, request, *args, **kwargs):
         actions = Actions.objects.filter(type=1)
         form = TestForm()
         for action in actions:
-            form.fields[action.slug] = forms.IntegerField(label=action.name, widget=forms.NumberInput(attrs={'name': f'{action.slug}'}))
+            form.fields[action.slug] = forms.IntegerField(label=action.name, widget=forms.NumberInput(attrs={'name': f'{action.slug}', 'class': 'count-field'}))
         return self.render_to_response(
-            context={'players': players,
-                     'form': form})
+            context={'form': form})
+
+
+
+    # def post(self, request, *args, **kwargs):
+    #     players = [value for inx, value in request.POST.items() if inx.isdigit()]
+
+
 
 
 class ResultStatisticView(GroupRequiredMixin,TemplateView):

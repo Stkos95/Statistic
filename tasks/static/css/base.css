@@ -183,3 +183,19 @@ div span:last-child {
 span {
     cursor: pointer;
 }
+
+
+
+/*div.statistic last-child {*/
+/*    display: block;*/
+
+/*}*/
+
+form input[type=submit] {
+    display: block;
+
+}
+
+.wrapper {
+    display: inline;
+}
