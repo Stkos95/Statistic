@@ -10,7 +10,8 @@
 <div class="statistic">
     <form action="{% url 'statistic:result' %}" method="post">
         {% csrf_token %}
-        <div class="player_form">
+        <div class="player-form">
+            <div class="fields">
         {% for field in form %}
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
@@ -18,8 +19,10 @@
 
 
         {% endfor %}
-        <span onclick="addPlayer(this)">+</span>
-        <span onclick="removePlayer(this)">-</span>
+
+        </div>
+        <span class="plus-button" onclick="addPlayer(this)">+</span>
+        <span class="minus-button" onclick="removePlayer(this)">-</span>
         </div>
 
     <input type="submit" value="Подтвердить">
@@ -52,15 +55,17 @@
 
 
 <script>
+    let form = document.forms[0]
     let elements = document.querySelectorAll('input.count-field')
     let wrapper = document.createElement('div')
     wrapper.setAttribute('class', 'wrapper')
     for (let el of elements) {
-        let wr = wrapper.cloneNode()
-        el.parentNode.insertBefore(wr, el)
-        wr.appendChild(el)
-        el.insertAdjacentHTML('beforebegin', '<button class="minus-button" type="button">-</button>');
-        el.insertAdjacentHTML('afterend', '<button class="plus-button" type="button">+</button>');
+        
+        // let wr = wrapper.cloneNode()
+        // el.parentNode.insertBefore(wr, el)
+        // wr.appendChild(el)
+        form.insertAdjacentHTML('beforebegin', '<button class="minus-button" type="button">-</button>');
+        form.insertAdjacentHTML('afterend', '<button class="plus-button" type="button">+</button>');
         // let bplus = document.createElement('button')
         // let bminus = document.createElement('button')
     }

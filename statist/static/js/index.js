@@ -19,34 +19,50 @@ function addPlayer(element){
 
 
 
+    // let div = document.querySelector('div.player-form')
+    let divCopied = document.querySelector('div.fields').cloneNode(true)
+    console.log(divCopied)
+
+
 
     let div = document.createElement('div')
-    div.setAttribute('class', 'player')
-
-
+    div.setAttribute('class', 'player-form')
 
     form.insertBefore(div, confirmButton)
 
-    // div.insertAdjacentHTML('afterbegin', '<span class="test">')
-    let field = document.createElement('input')
-    field.setAttribute('type', 'text')
-    field.setAttribute('name', max)
-    field.classList.add('players')
 
-    let plus = document.createElement('span')
+
+    // div.insertAdjacentHTML('afterbegin', '<span class="test">')
+
+
+    // let field = document.createElement('input')
+    // field.setAttribute('type', 'text')
+    // field.setAttribute('name', max)
+    // field.classList.add('players')
+
+    let plus = document.createElement('span');
     plus.setAttribute('onclick', 'addPlayer(this)')
-    let plusText = document.createTextNode('+')
+    plus.classList.add('plus-button')
+    let plusText = document.createTextNode('+');
     plus.appendChild(plusText)
 
-    let minus = document.createElement('span')
+    let minus = document.createElement('span');
     minus.setAttribute('onclick', 'removePlayer(this)')
+    minus.classList.add('minus-button')
     let minusText = document.createTextNode('-')
     minus.appendChild(minusText)
 
-
-    div.appendChild(field)
+    div.appendChild(divCopied)
     div.appendChild(plus)
     div.appendChild(minus)
+
+    let players = document.querySelectorAll('.player-form')
+    if (players.length > 1) {
+        minus.style.display = 'inline'
+
+
+    }
+
 
     element.nextElementSibling.style.display = 'inline'
 
@@ -59,6 +75,8 @@ function addPlayer(element){
 
 
 function removePlayer(element) {
+
+
     if(element.previousElementSibling.previousElementSibling.value) {
         let conf = confirm('В строке введено значение, удалить?')
 
@@ -67,11 +85,18 @@ function removePlayer(element) {
         }
 
     }
-
     else {
             element.parentNode.remove()
         }
 
+    let buttons = document.querySelectorAll('.plus-button')
+     let LastButton = buttons[buttons.length - 1];
+    if (buttons.length === 1) {
 
+        LastButton.previousElementSibling.style.display = 'inline'
+        LastButton.nextElementSibling.style.display = 'none'
+    }
+
+    LastButton.style.display = 'inline'
 
 }

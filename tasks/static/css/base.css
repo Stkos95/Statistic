@@ -199,3 +199,8 @@ form input[type=submit] {
 .wrapper {
     display: inline;
 }
+
+.fields {
+    display: inline-block;
+    /*float: left;*/
+}
