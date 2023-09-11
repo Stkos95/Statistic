@@ -204,3 +204,8 @@ form input[type=submit] {
     display: inline-block;
     /*float: left;*/
 }
+
+div.player-form {
+    display: none;
+    /*background-color: red;*/
+}

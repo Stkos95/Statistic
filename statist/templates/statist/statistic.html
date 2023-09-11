@@ -5,6 +5,7 @@
 
 {% block content %}
 <script src="{% static 'js/index.js' %}"></script>
+<script src="{% static 'js/plus-minus.js' %}"></script>
 
 <h1>Подсчет статистики:</h1>
 <div class="statistic">
@@ -21,8 +22,8 @@
         {% endfor %}
 
         </div>
-        <span class="plus-button" onclick="addPlayer(this)">+</span>
-        <span class="minus-button" onclick="removePlayer(this)">-</span>
+        <span class="add-player" onclick="addPlayer(this)">+</span>
+        <span class="remove-player" onclick="removePlayer(this)">-</span>
         </div>
 
     <input type="submit" value="Подтвердить">
@@ -55,53 +56,8 @@
 
 
 <script>
-    let form = document.forms[0]
-    let elements = document.querySelectorAll('input.count-field')
-    let wrapper = document.createElement('div')
-    wrapper.setAttribute('class', 'wrapper')
-    for (let el of elements) {
-        
-        // let wr = wrapper.cloneNode()
-        // el.parentNode.insertBefore(wr, el)
-        // wr.appendChild(el)
-        form.insertAdjacentHTML('beforebegin', '<button class="minus-button" type="button">-</button>');
-        form.insertAdjacentHTML('afterend', '<button class="plus-button" type="button">+</button>');
-        // let bplus = document.createElement('button')
-        // let bminus = document.createElement('button')
-    }
 
-
-
-
-    const plusButton = document.querySelectorAll(".plus-button");
-    plusButton.forEach((btn) => {
-            btn.addEventListener('click', (element) =>{
-                let number = btn.previousElementSibling;
-
-                number.stepUp();
-                let change = new Event("change")
-                number.dispatchEvent(change)
-
-            })
-        }
-        )
-
-
-
-    const minusButton = document.querySelectorAll(".minus-button");
-    minusButton.forEach((btn) => {
-        btn.addEventListener('click', (element) =>{
-            let number = btn.nextElementSibling;
-
-            number.stepDown();
-            let change = new Event("change")
-            number.dispatchEvent(change)
-
-        })
-    }
-    )
-
-
+    addPlayer()
 
 </script>
 
