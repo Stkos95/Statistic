@@ -1,26 +1,12 @@
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
-from django.core.exceptions import PermissionDenied
-from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.models import Group
 from django import forms
-from django.http import HttpResponseForbidden, JsonResponse
-from django.http import HttpRequest, HttpResponse, Http404
-from django.views import View
-from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic.base import TemplateResponseMixin, TemplateView
-from django.views.generic.dates import DateMixin, BaseDateListView, ArchiveIndexView
-from django.contrib.auth.views import LoginView, LogoutView
-import logging
-from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
-from .models import Type, Game, Actions, Records, Players
+from django.http import HttpResponseForbidden
+from django.http import HttpResponse
+from django.views.generic.base import TemplateView
+from django.contrib.auth.mixins import AccessMixin
+from .models import Actions
 from .forms import TestForm
-from django.views.generic import DetailView, CreateView, FormView
-
-import datetime
-import logging
-
-from django.views.generic.list import ListView
+from statist.serialization1 import serialisation1
 
 
 class GroupRequiredMixin(AccessMixin):
@@ -41,12 +27,6 @@ class GroupRequiredMixin(AccessMixin):
         return False
 
 
-
-
-
-
-
-import json
 class PlayersView(GroupRequiredMixin, TemplateView):
     group_name = 'Statistic'
     template_name = 'statist/players.html'
@@ -67,7 +47,7 @@ class PlayersView(GroupRequiredMixin, TemplateView):
 
 
 
-
+# засунуть в кэш actions
 class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
@@ -96,13 +76,11 @@ class ResultStatisticView(GroupRequiredMixin,TemplateView):
 
     def post(self, request, *args, **kwargs):
         print(request.POST)
-        result = dict(request.POST)
-        result.pop('csrfmiddlewaretoken')
+        data = dict(request.POST)
 
-        res1 = {}
-        for i in range(len(result['name'])):
-            res1 = res1 | {result['name'][i]: {key: result[key][i] for key in result.keys() if key not in ('name', 'csrfmiddlewaretoken' )}}
-        print(res1)
+        players_statistic_json = serialisation1(data)
+        print(players_statistic_json)
+
         return HttpResponse('Опа, отправилось!')
 
 

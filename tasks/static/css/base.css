@@ -184,8 +184,9 @@ span {
     cursor: pointer;
 }
 
-
-
+.count-field {
+    width: 50px;
+}
 /*div.statistic last-child {*/
 /*    display: block;*/
 
@@ -209,3 +210,17 @@ div.player-form {
     display: none;
     /*background-color: red;*/
 }
+
+
+/*.minus-button, .plus-button {*/
+/*    width: 20px;*/
+/*    height: 20px;*/
+/*    background: #f2f2f2;*/
+/*    border-radius: 4px;*/
+/*    padding: 8px 5px 8px 5px;*/
+/*    border: 1px solid #ddd;*/
+/*    display: inline-block;*/
+/*    vertical-align: text-top;*/
+/*    text-align: center;*/
+
+/*}*/
