@@ -33,23 +33,19 @@
 
 
 <script>
+
     const form = document.forms[0]
     function submit(e) {
-        e.preventDefault()
-        let players = document.querySelectorAll('div.player')
-        for ( let player of players) {
-            let playerName = player.querySelector('h5').textContent
-            let fields = player.querySelectorAll('input')
-                for (let field of fields) {
-                    let name = field.name
-                    field.setAttribute('name', name + '_' + playerName)
-                }
-
+        e.preventDefault();
+        const myDiv = document.querySelectorAll('.player-form')[0]
+        myDiv.removeAttribute('name')
+        const fields =  myDiv.querySelectorAll('input')
+        for (let field of fields ) {
+            field.removeAttribute('name')
         }
-        console.log(form.action)
-        form.submit()
 
-    }
+            form.submit()
+        }
     let button = document.querySelector('[type="submit"]')
     button.addEventListener('click', submit)
 </script>

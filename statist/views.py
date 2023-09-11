@@ -75,7 +75,11 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
         actions = Actions.objects.filter(type=1)
         form = TestForm()
         for action in actions:
-            form.fields[action.slug] = forms.IntegerField(label=action.name, widget=forms.NumberInput(attrs={'name': f'{action.slug}', 'class': 'count-field'}))
+            form.fields[action.slug] = forms.IntegerField(label=action.name, widget=forms.NumberInput(attrs={'name': f'{action.slug}[]',
+                                                                                                             'class': 'count-field',
+                                                                                                             'min': 0,
+                                                                                                             'value': 0,
+                                                                                                             }))
         return self.render_to_response(
             context={'form': form})
 
@@ -92,6 +96,13 @@ class ResultStatisticView(GroupRequiredMixin,TemplateView):
 
     def post(self, request, *args, **kwargs):
         print(request.POST)
+        result = dict(request.POST)
+        result.pop('csrfmiddlewaretoken')
+
+        res1 = {}
+        for i in range(len(result['name'])):
+            res1 = res1 | {result['name'][i]: {key: result[key][i] for key in result.keys() if key not in ('name', 'csrfmiddlewaretoken' )}}
+        print(res1)
         return HttpResponse('Опа, отправилось!')
 
 
