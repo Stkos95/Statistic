@@ -1,8 +1,8 @@
 function createPlusMinusButtons(element) {
     const plus = createButton('plus-button', '+')
-    const minus = createButton('minus-button', '-')
+    // const minus = createButton('minus-button', '-')
 
-    element.parentNode.insertBefore(minus, element)
+    // element.parentNode.insertBefore(minus, element)
     element.after(plus)
 
     // plus button event
@@ -16,12 +16,12 @@ function createPlusMinusButtons(element) {
     })
 
     // minus button event
-    minus.addEventListener('click', (element) => {
-        let number = minus.nextElementSibling;
-        number.stepDown()
-        let change = new Event('change');
-        number.dispatchEvent(change)
-    })
+    // minus.addEventListener('click', (element) => {
+    //     let number = minus.nextElementSibling;
+    //     number.stepDown()
+    //     let change = new Event('change');
+    //     number.dispatchEvent(change)
+    // })
 
 }
 

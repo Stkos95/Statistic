@@ -8,25 +8,49 @@
 <script src="{% static 'js/plus-minus.js' %}"></script>
 
 <h1>Подсчет статистики:</h1>
+
+
+
+<table>
+    <thead>
+    <tr>
+        {% for field in form %}
+        <th>{{ field.label }}</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+        <tr>
+            {% for field in form %}
+            <td>
+                {{ field }}
+            </td>
+            {% endfor %}
+        </tr>
+    </tbody>
+</table>
 <div class="statistic">
     <form action="{% url 'statistic:result' %}" method="post">
         {% csrf_token %}
         <div class="player-form">
             <div class="fields">
-        {% for field in form %}
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
+
+
+<!--        {% for field in form %}-->
+<!--            <label for="{{ field.id_for_label }}">{{ field.label }}</label>-->
+<!--            {{ field }}-->
 
 
 
-        {% endfor %}
+<!--        {% endfor %}-->
 
         </div>
         <span class="add-player" onclick="addPlayer(this)">+</span>
         <span class="remove-player" onclick="removePlayer(this)">-</span>
         </div>
-
+    <input type="hidden" name="statistic_type" value="{{ statistic_type }}">
     <input type="submit" value="Подтвердить">
+
     </form>
 
 </div>
@@ -38,7 +62,7 @@
     function submit(e) {
         e.preventDefault();
         const myDiv = document.querySelectorAll('.player-form')[0]
-        myDiv.removeAttribute('name')
+        // myDiv.removeAttribute('name')
         const fields =  myDiv.querySelectorAll('input')
         for (let field of fields ) {
             field.removeAttribute('name')

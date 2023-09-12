@@ -61,7 +61,8 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
                                                                                                              'value': 0,
                                                                                                              }))
         return self.render_to_response(
-            context={'form': form})
+            context={'form': form,
+                     'statistic_type': 1})
 
 
 
@@ -75,7 +76,6 @@ class ResultStatisticView(GroupRequiredMixin,TemplateView):
     template_name = 'statistic/count.html'
 
     def post(self, request, *args, **kwargs):
-        print(request.POST)
         data = dict(request.POST)
 
         players_statistic_json = serialisation1(data)
