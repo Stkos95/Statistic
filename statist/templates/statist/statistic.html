@@ -9,59 +9,47 @@
 
 <h1>Подсчет статистики:</h1>
 
-
-
+<form action="{% url 'statistic:result' %}" method="post">
+    {% csrf_token %}
 <table>
-    <thead>
     <tr>
-        {% for field in form %}
-        <th>{{ field.label }}</th>
+        {% for f in form %}
+           <th>
+               {{ f.label }}
+           </th>
         {% endfor %}
     </tr>
-    </thead>
-    <tbody>
-        <tr>
-            {% for field in form %}
-            <td>
-                {{ field }}
-            </td>
-            {% endfor %}
-        </tr>
-    </tbody>
-</table>
-<div class="statistic">
-    <form action="{% url 'statistic:result' %}" method="post">
-        {% csrf_token %}
-        <div class="player-form">
-            <div class="fields">
 
+    <tr class="field-row" style="display:none;">
+        {% for f in form %}
+            <td class="field">{{ f }}</td>
+        {% endfor %}
+        <td><span class="add-player" onclick="addPlayer(this)">+</span>
 
-<!--        {% for field in form %}-->
-<!--            <label for="{{ field.id_for_label }}">{{ field.label }}</label>-->
-<!--            {{ field }}-->
-
-
-
-<!--        {% endfor %}-->
-
-        </div>
-        <span class="add-player" onclick="addPlayer(this)">+</span>
         <span class="remove-player" onclick="removePlayer(this)">-</span>
-        </div>
-    <input type="hidden" name="statistic_type" value="{{ statistic_type }}">
-    <input type="submit" value="Подтвердить">
+        </td>
+    </tr>
 
-    </form>
+</table>
+<input type="hidden" name="statistic_type" value="{{ statistic_type }}">
+    <label class="switch">
+  <input onclick="checkboxOn(this)" type="checkbox">
+  <span class="slider round"></span>
+</label>
+<input type="submit" value="Подтвердить">
+</form>
 
-</div>
+
 
 
 <script>
-
+    const t = document.querySelector('input[type="checkbox"]')
+    console.log(t.checked)
     const form = document.forms[0]
     function submit(e) {
         e.preventDefault();
-        const myDiv = document.querySelectorAll('.player-form')[0]
+        const myDiv = document.querySelectorAll('.field-row')[0]
+
         // myDiv.removeAttribute('name')
         const fields =  myDiv.querySelectorAll('input')
         for (let field of fields ) {
@@ -70,7 +58,9 @@
 
             form.submit()
         }
+
     let button = document.querySelector('[type="submit"]')
+    console.log(button)
     button.addEventListener('click', submit)
 </script>
 
@@ -78,6 +68,31 @@
 <script>
 
     addPlayer()
+
+
+
+
+    // checkbox
+    function eventCount(event) {
+        console.log(event.target)
+        // console.log(element.value)
+        event.target.value ++
+    }
+
+    function checkboxOn(element) {
+        const inputs = document.querySelectorAll('input[type="number"]');
+        if (element.checked) {
+            inputs.forEach((element) => {
+                element.addEventListener('click', eventCount)
+            })
+        } else {
+            console.log('you ar here')
+            inputs.forEach((element) => {
+                element.removeEventListener('click', eventCount, false)
+            })
+        }
+    }
+
 
 </script>
 

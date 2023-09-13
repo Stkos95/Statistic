@@ -175,7 +175,7 @@ div.detail p:nth-child(2) {
 }
 
 
-div span:last-child {
+span:last-child {
     color: red;
     display: none;
 }
@@ -201,10 +201,7 @@ form input[type=submit] {
     display: inline;
 }
 
-.fields {
-    display: inline-block;
-    /*float: left;*/
-}
+
 
 div.player-form {
     display: none;
@@ -235,4 +232,26 @@ input::-webkit-inner-spin-button {
 /* Firefox */
 input[type=number] {
   -moz-appearance: textfield;
+}
+
+
+th, td {
+    border: 1px solid rgb(190, 190, 190);
+    padding: 10px;
+}
+td {
+    text-align: center;
+    width: 200px;
+}
+
+table {
+  border-collapse: collapse;
+  border: 2px solid rgb(200, 200, 200);
+  letter-spacing: 1px;
+  font-family: sans-serif;
+  font-size: 0.8rem;
+}
+
+.fields {
+    display: inline-block;
 }
