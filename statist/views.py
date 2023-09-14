@@ -52,6 +52,7 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
     def get(self, request, *args, **kwargs):
+        print('2222222222222222222222222222222')
         actions = Actions.objects.filter(type=1)
         form = TestForm()
         for action in actions:
@@ -61,7 +62,7 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
                                                                                                              'value': 0,
                                                                                                              }))
         return self.render_to_response(
-            context={'form': form,
+            context={'actions': actions,
                      'statistic_type': 1})
 
 
@@ -75,7 +76,12 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
 class ResultStatisticView(GroupRequiredMixin,TemplateView):
     template_name = 'statistic/count.html'
 
+    def get(self, request, *args, **kwargs):
+
+        return HttpResponse('Опа, отправилось!')
+
     def post(self, request, *args, **kwargs):
+        # print(request.POST)
         data = dict(request.POST)
 
         players_statistic_json = serialisation1(data)

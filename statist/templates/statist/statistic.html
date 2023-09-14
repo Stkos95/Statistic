@@ -8,21 +8,33 @@
 <script src="{% static 'js/plus-minus.js' %}"></script>
 
 <h1>Подсчет статистики:</h1>
+<div class="checkbox-wrapper-8">
+  <input onclick="checkboxOn(this)" class="tgl tgl-skewed" id="cb3-8" type="checkbox"/>
+  <label class="tgl-btn" data-tg-off="OFF" data-tg-on="ON" for="cb3-8"></label>
+</div>
 
 <form action="{% url 'statistic:result' %}" method="post">
     {% csrf_token %}
 <table>
     <tr>
-        {% for f in form %}
-           <th>
-               {{ f.label }}
+        <th class="head">
+            Имя игрока
+        </th>
+        {% for act in actions %}
+           <th class="head">
+               {{ act }}
            </th>
         {% endfor %}
     </tr>
 
     <tr class="field-row" style="display:none;">
-        {% for f in form %}
-            <td class="field">{{ f }}</td>
+        <td class="field">
+        <input type="text" name="name">
+        </td>
+        {% for act in actions %}
+            <td class="field"><input class="success"  name="{{ act.slug }}-uspeshno" type="number" value="0">
+                <input class="fail" name="{{ act.slug }}-oshibka" type="number" value="0">
+            </td>
         {% endfor %}
         <td><span class="add-player" onclick="addPlayer(this)">+</span>
 
@@ -32,10 +44,7 @@
 
 </table>
 <input type="hidden" name="statistic_type" value="{{ statistic_type }}">
-    <label class="switch">
-  <input onclick="checkboxOn(this)" type="checkbox">
-  <span class="slider round"></span>
-</label>
+
 <input type="submit" value="Подтвердить">
 </form>
 
@@ -43,8 +52,9 @@
 
 
 <script>
-    const t = document.querySelector('input[type="checkbox"]')
-    console.log(t.checked)
+    // const t = document.querySelector('input[type="checkbox"]')
+    //
+    // console.log(t.checked)
     const form = document.forms[0]
     function submit(e) {
         e.preventDefault();
@@ -75,7 +85,7 @@
     // checkbox
     function eventCount(event) {
         console.log(event.target)
-        // console.log(element.value)
+
         event.target.value ++
     }
 
@@ -83,11 +93,12 @@
         const inputs = document.querySelectorAll('input[type="number"]');
         if (element.checked) {
             inputs.forEach((element) => {
+                element.style.cursor = 'pointer'
                 element.addEventListener('click', eventCount)
             })
         } else {
-            console.log('you ar here')
             inputs.forEach((element) => {
+                element.style.cursor = 'text'
                 element.removeEventListener('click', eventCount, false)
             })
         }
