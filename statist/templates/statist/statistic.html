@@ -32,11 +32,11 @@
 
     <tr class="field-row" style="display:none;">
         <td class="field">
-        <input type="text" name="name">
+        <input type="text" name="name-1">
         </td>
         {% for act in actions %}
-            <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno" type="number" value="0">
-                <input class="fail" name="{{ act.slug }}-oshibka" type="number" value="0">
+            <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno-1" type="number" value="0">
+                <input class="fail" name="{{ act.slug }}-oshibka-1" type="number" value="0">
             </td>
         {% endfor %}
         <td><span class="add-player" onclick="addPlayer(this)">+</span>
@@ -47,7 +47,10 @@
 
 </table>
     </div>
+<!--</form>-->
 
+<!--    <form action="{% url 'statistic:result' %}" method="post">-->
+<!--        {% csrf_token %}-->
         <div data-half="2" class="half">
 <table>
     <tr>
@@ -63,11 +66,11 @@
 
     <tr class="field-row" style="display:none;">
         <td class="field">
-        <input type="text" name="name">
+        <input type="text" name="name-2">
         </td>
         {% for act in actions %}
-            <td class="field"><input data-half="2" class="success"  name="{{ act.slug }}-uspeshno" type="number" value="0">
-                <input class="fail" name="{{ act.slug }}-oshibka" type="number" value="0">
+            <td class="field"><input data-half="2" class="success"  name="{{ act.slug }}-uspeshno-2" type="number" value="0">
+                <input class="fail" name="{{ act.slug }}-oshibka-2" type="number" value="0">
             </td>
         {% endfor %}
         <td><span class="add-player" onclick="addPlayer(this)">+</span>
@@ -95,17 +98,20 @@
     const form = document.forms[0]
     function submit(e) {
         e.preventDefault();
-        const myDiv = document.querySelectorAll('.field-row')[0]
+        // console.log(forms)
+        // for (let form of forms) {
+        const myDiv = form.querySelectorAll('.field-row')[0]
 
-        // myDiv.removeAttribute('name')
-        const fields =  myDiv.querySelectorAll('input')
-        for (let field of fields ) {
-            field.removeAttribute('name')
-        }
+
+            // myDiv.removeAttribute('name')
+            const fields = myDiv.querySelectorAll('input')
+            for (let field of fields) {
+                field.removeAttribute('name')
+            }
 
             form.submit()
-        }
 
+    }
     let button = document.querySelector('[type="submit"]')
     console.log(button)
     button.addEventListener('click', submit)

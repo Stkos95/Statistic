@@ -7,7 +7,7 @@ function addPlayer(element = null,table=null) {
     let confirmButton = document.querySelector('form input[type="submit"]');
 
 
-    let rowCopied = document.querySelector('.field-row').cloneNode(true)
+    let rowCopied = table.querySelector('.field-row').cloneNode(true)
 
     rowCopied.style.display = 'table-row'
     let c = table.insertRow(-1)
