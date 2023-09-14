@@ -403,3 +403,9 @@ input[type=number] {
     left: 10%;
 }
 
+.half {
+    display: none;
+}
+.selected {
+    display: block;
+}

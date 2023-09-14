@@ -8,6 +8,8 @@
 <script src="{% static 'js/plus-minus.js' %}"></script>
 
 <h1>Подсчет статистики:</h1>
+<span onclick="halfSelect(this)" data-half="1">1 Тайм</span>
+<span onclick="halfSelect(this)" data-half="2">2 Тайм</span>
 <div class="checkbox-wrapper-8">
   <input onclick="checkboxOn(this)" class="tgl tgl-skewed" id="cb3-8" type="checkbox"/>
   <label class="tgl-btn" data-tg-off="OFF" data-tg-on="ON" for="cb3-8"></label>
@@ -15,6 +17,7 @@
 
 <form action="{% url 'statistic:result' %}" method="post">
     {% csrf_token %}
+    <div data-half="1" class="half selected">
 <table>
     <tr>
         <th class="head">
@@ -32,7 +35,7 @@
         <input type="text" name="name">
         </td>
         {% for act in actions %}
-            <td class="field"><input class="success"  name="{{ act.slug }}-uspeshno" type="number" value="0">
+            <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno" type="number" value="0">
                 <input class="fail" name="{{ act.slug }}-oshibka" type="number" value="0">
             </td>
         {% endfor %}
@@ -43,6 +46,40 @@
     </tr>
 
 </table>
+    </div>
+
+        <div data-half="2" class="half">
+<table>
+    <tr>
+        <th class="head">
+            Имя игрока
+        </th>
+        {% for act in actions %}
+           <th class="head">
+               {{ act }}
+           </th>
+        {% endfor %}
+    </tr>
+
+    <tr class="field-row" style="display:none;">
+        <td class="field">
+        <input type="text" name="name">
+        </td>
+        {% for act in actions %}
+            <td class="field"><input data-half="2" class="success"  name="{{ act.slug }}-uspeshno" type="number" value="0">
+                <input class="fail" name="{{ act.slug }}-oshibka" type="number" value="0">
+            </td>
+        {% endfor %}
+        <td><span class="add-player" onclick="addPlayer(this)">+</span>
+
+        <span class="remove-player" onclick="removePlayer(this)">-</span>
+        </td>
+    </tr>
+
+</table>
+    </div>
+
+
 <input type="hidden" name="statistic_type" value="{{ statistic_type }}">
 
 <input type="submit" value="Подтвердить">
@@ -76,8 +113,14 @@
 
 
 <script>
+    window.onload = function() {
+        let tables = document.querySelectorAll('table')
+        for (let table of tables){
+            addPlayer(null, table)
+        }
 
-    addPlayer()
+    }
+    // addPlayer()
 
 
 
@@ -104,6 +147,21 @@
         }
     }
 
+    function halfSelect(element) {
+        let halfs = document.querySelectorAll('.half');
+        let data = element.getAttribute('data-half');
+        for (let f of halfs) {
+            let h = f.getAttribute('data-half');
+
+            if (h === data) {
+                f.classList.add('selected')
+            } else {
+                f.classList.remove('selected')
+            }
+        }
+
+
+    }
 
 </script>
 

@@ -1,6 +1,9 @@
-function addPlayer(element = null) {
+function addPlayer(element = null,table=null) {
     let form = document.forms[0];
-    let table = document.querySelector('table')
+    if (!table){
+        table = document.querySelector('div.selected table')
+    }
+    console.log(table)
     let confirmButton = document.querySelector('form input[type="submit"]');
 
 
