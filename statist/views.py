@@ -1,12 +1,23 @@
 from django.contrib.auth.models import Group
 from django import forms
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.http import HttpResponse
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import AccessMixin
 from .models import Actions
 from .forms import TestForm
 from statist.serialization1 import serialisation1
+from django.forms import formset_factory, BaseFormSet
+
+class TestBaseFormSet(BaseFormSet):
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+        actions = Actions.objects.filter(type=1)
+        for action in actions:
+            form.fields[action.slug] = forms.IntegerField(label=action.name,min_value=0)
+
+
+
 
 
 class GroupRequiredMixin(AccessMixin):
@@ -52,23 +63,15 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
     def get(self, request, *args, **kwargs):
-
+        initial = []
         actions = Actions.objects.filter(type=1)
-        form = TestForm()
-        for action in actions:
-            form.fields[action.slug] = forms.IntegerField(label=action.name, widget=forms.NumberInput(attrs={'name': f'{action.slug}[]',
-                                                                                                             'class': 'count-field',
-                                                                                                             'min': 0,
-                                                                                                             'value': 0,
-                                                                                                             }))
+        TestFormSet = formset_factory(TestForm, formset=TestBaseFormSet)
+        formset = TestFormSet()
+        print(formset.forms)
         return self.render_to_response(
-            context={'actions': actions,
+            context={'formset': formset,
                      'statistic_type': 1})
 
-
-
-    # def post(self, request, *args, **kwargs):
-    #     players = [value for inx, value in request.POST.items() if inx.isdigit()]
 
 
 
@@ -79,6 +82,8 @@ class ResultStatisticView(GroupRequiredMixin,TemplateView):
     def get(self, request, *args, **kwargs):
 
         return HttpResponse('Опа, отправилось!')
+
+
 
     def post(self, request, *args, **kwargs):
         print(request.POST)
@@ -91,3 +96,7 @@ class ResultStatisticView(GroupRequiredMixin,TemplateView):
         return HttpResponse('Опа, отправилось!')
 
 
+def ajax_action(request):
+    print(request.method)
+    print(request.POST)
+    return JsonResponse({'status': 'ok'})
