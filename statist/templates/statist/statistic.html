@@ -8,6 +8,7 @@
 <script src="{% static 'js/plus-minus.js' %}"></script>
 
 <h1>Подсчет статистики:</h1>
+
 <span onclick="halfSelect(this)" data-half="1">1 Тайм</span>
 <span onclick="halfSelect(this)" data-half="2">2 Тайм</span>
 <div class="checkbox-wrapper-8">
@@ -34,9 +35,11 @@
         {% endfor %}
     </tr>
 
+    {% for f in formset.forms %}
     <tr class="field-row" style="display:none;">
+
         <td class="field">
-        <input type="text" name="name-1">
+        {{ f.name }}
         </td>
         {% for act in actions %}
             <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno-1" type="number" value="0">
@@ -48,6 +51,7 @@
         <span class="remove-player" onclick="removePlayer(this)">-</span>
         </td>
     </tr>
+    {% endfor %}
 
 
 </table>

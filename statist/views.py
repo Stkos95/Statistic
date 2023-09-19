@@ -4,17 +4,17 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.http import HttpResponse
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import AccessMixin
-from .models import Actions
+from .models import Actions, Players
 from .forms import TestForm
 from statist.serialization1 import serialisation1
 from django.forms import formset_factory, BaseFormSet
 
-class TestBaseFormSet(BaseFormSet):
-    def add_fields(self, form, index):
-        super().add_fields(form, index)
-        actions = Actions.objects.filter(type=1)
-        for action in actions:
-            form.fields[action.slug] = forms.IntegerField(label=action.name,min_value=0)
+# class TestBaseFormSet(BaseFormSet):
+#     def add_fields(self, form, index):
+#         super().add_fields(form, index)
+#         actions = Actions.objects.filter(type=1)
+#         for action in actions:
+#             form.fields[action.slug] = forms.IntegerField(label=action.name,min_value=0)
 
 
 
@@ -63,11 +63,22 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
     def get(self, request, *args, **kwargs):
+        players = Players.objects.all()
+
         initial = []
+        for player in players:
+            initial.append({'name': player})
+        TestFormSet = formset_factory(TestForm)
+
+        formset = TestFormSet(initial=initial)
         actions = Actions.objects.filter(type=1)
-        TestFormSet = formset_factory(TestForm, formset=TestBaseFormSet)
-        formset = TestFormSet()
         print(formset.forms)
+        print(initial)
+
+
+        # TestFormSet = formset_factory(TestForm, formset=TestBaseFormSet)
+        # formset = TestFormSet()
+        # print(formset.forms)
         return self.render_to_response(
             context={'formset': formset,
                      'actions': actions,
