@@ -9,5 +9,5 @@ urlpatterns = [
     # path('', views.PlayersView.as_view(), name='home'),
     path('', views.CountStatisticView.as_view(), name='count'),
     path('result/', views.ResultStatisticView.as_view(), name='result'),
-    path('test/', views.ajax_action, name='ajax')
+    # path('test/', views.ajax_action, name='ajax')
 ]

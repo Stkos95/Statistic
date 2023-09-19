@@ -70,6 +70,7 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
         print(formset.forms)
         return self.render_to_response(
             context={'formset': formset,
+                     'actions': actions,
                      'statistic_type': 1})
 
 
@@ -96,7 +97,7 @@ class ResultStatisticView(GroupRequiredMixin,TemplateView):
         return HttpResponse('Опа, отправилось!')
 
 
-def ajax_action(request):
-    print(request.method)
-    print(request.POST)
-    return JsonResponse({'status': 'ok'})
+# def ajax_action(request):
+#     print(request.method)
+#     print(request.POST)
+#     return JsonResponse({'status': 'ok'})

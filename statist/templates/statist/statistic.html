@@ -8,7 +8,6 @@
 <script src="{% static 'js/plus-minus.js' %}"></script>
 
 <h1>Подсчет статистики:</h1>
-{{formset.empty_form}}
 <span onclick="halfSelect(this)" data-half="1">1 Тайм</span>
 <span onclick="halfSelect(this)" data-half="2">2 Тайм</span>
 <div class="checkbox-wrapper-8">
@@ -18,127 +17,81 @@
 
 <form action="{% url 'statistic:result' %}" method="post">
     {% csrf_token %}
+
+
     <div data-half="1" class="half selected">
 
-
 <table>
+
     <tr>
-        {% for f in formset.forms.0 %}
         <th class="head">
-            {{ f.label }}
+            Имя игрока
         </th>
+        {% for act in actions %}
+           <th class="head">
+               {{ act }}
+           </th>
         {% endfor %}
     </tr>
 
-
-
-
-<!--    <tr>-->
-<!--        <th class="head">-->
-<!--            Имя игрока-->
-<!--        </th>-->
-<!--        {% for act in actions %}-->
-<!--           <th class="head">-->
-<!--               {{ act }}-->
-<!--           </th>-->
-<!--        {% endfor %}-->
-<!--    </tr>-->
-
-
-    <tr class="field-row" style="display: none;">
-        {% for f in formset.forms.0 %}
+    <tr class="field-row" style="display:none;">
         <td class="field">
-            {{ f }}
+        <input type="text" name="name-1">
         </td>
+        {% for act in actions %}
+            <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno-1" type="number" value="0">
+                <input class="fail" name="{{ act.slug }}-oshibka-1" type="number" value="0">
+            </td>
         {% endfor %}
+        <td><span class="add-player" onclick="addPlayer(this)">+</span>
 
+        <span class="remove-player" onclick="removePlayer(this)">-</span>
+        </td>
     </tr>
-
-
-
-
-<!--    <tr class="field-row" style="display:none;">-->
-<!--        <td class="field">-->
-<!--        <input type="text" name="name-1">-->
-<!--        </td>-->
-<!--        {% for act in actions %}-->
-<!--            <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno-1" type="number" value="0">-->
-<!--                <input class="fail" name="{{ act.slug }}-oshibka-1" type="number" value="0">-->
-<!--            </td>-->
-<!--        {% endfor %}-->
-<!--        <td><span class="add-player" onclick="addPlayer(this)">+</span>-->
-
-<!--        <span class="remove-player" onclick="removePlayer(this)">-</span>-->
-<!--        </td>-->
-<!--    </tr>-->
 
 
 </table>
     </div>
-<!--</form>-->
 
-<!--    <form action="{% url 'statistic:result' %}" method="post">-->
-<!--        {% csrf_token %}-->
-        <div data-half="2" class="half">
+    <div data-half="2" class="half">
 <table>
+
     <tr>
-        {% for f in formset.forms.0 %}
         <th class="head">
-            {{ f.label }}
+            Имя игрока
         </th>
+        {% for act in actions %}
+           <th class="head">
+               {{ act }}
+           </th>
         {% endfor %}
     </tr>
 
-
-
-
-<!--    <tr>-->
-<!--        <th class="head">-->
-<!--            Имя игрока-->
-<!--        </th>-->
-<!--        {% for act in actions %}-->
-<!--           <th class="head">-->
-<!--               {{ act }}-->
-<!--           </th>-->
-<!--        {% endfor %}-->
-<!--    </tr>-->
-
-
-    <tr class="field-row" >
-        {% for f in formset.forms.0 %}
+    <tr class="field-row" style="display:none;">
         <td class="field">
-            {{ f }}
+        <input type="text" name="name-1">
         </td>
+        {% for act in actions %}
+            <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno-1" type="number" value="0">
+                <input class="fail" name="{{ act.slug }}-oshibka-1" type="number" value="0">
+            </td>
         {% endfor %}
+        <td><span class="add-player" onclick="addPlayer(this)">+</span>
 
+        <span class="remove-player" onclick="removePlayer(this)">-</span>
+        </td>
     </tr>
 
-
-
-
-<!--    <tr class="field-row" style="display:none;">-->
-<!--        <td class="field">-->
-<!--        <input type="text" name="name-1">-->
-<!--        </td>-->
-<!--        {% for act in actions %}-->
-<!--            <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno-1" type="number" value="0">-->
-<!--                <input class="fail" name="{{ act.slug }}-oshibka-1" type="number" value="0">-->
-<!--            </td>-->
-<!--        {% endfor %}-->
-<!--        <td><span class="add-player" onclick="addPlayer(this)">+</span>-->
-
-<!--        <span class="remove-player" onclick="removePlayer(this)">-</span>-->
-<!--        </td>-->
-<!--    </tr>-->
 
 </table>
-    </div>
+</div>
+
 
 
 <input type="hidden" name="statistic_type" value="{{ statistic_type }}">
 
 <input type="submit" value="Подтвердить">
-<input type="button" value="Подтвердить ajax">
+<input type="button" id="ajax-send" value="Подтвердить ajax">
 </form>
 
 
@@ -222,22 +175,23 @@
 
     }
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    // const sendButton = document.querySelector('[value="Подтвердить"]')
-    // sendButton.addEventListener('click', (event) => {
-    //     event.preventDefault();
-    //     const url = '{% url "statistic:ajax" %}'
-    //     let formData = new FormData();
-    //     formData.append('id', '1');
-    //     formData.append('name', '2');
-    //     let options = {
-    //         method: 'POST',
-    //         headers: {'X-CSRFToken': csrftoken},
-    //         mode: 'same-origin'
-    //     }
-    //     options['body'] = formData;
-    //     fetch(url, options).then(response => response.json())
-    //
-    // })
+
+    const sendButton = document.querySelector('#ajax-send')
+    sendButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        const url = '{% url "statistic:result" %}'
+        let formData = new FormData();
+        formData.append('id', '1');
+        formData.append('name', '2');
+        let options = {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            mode: 'same-origin'
+        }
+        options['body'] = formData;
+        fetch(url, options).then(response => response.json())
+
+    })
 
 
 </script>
