@@ -1,6 +1,7 @@
 /** {*/
 /*    border: 1px solid red;*/
-
+/*    margin: 0;*/
+/*    padding: 0;*/
 /*}*/
 
 body {
@@ -175,10 +176,10 @@ div.detail p:nth-child(2) {
 }
 
 
-span:last-child {
-    color: red;
-    /*display: none;*/
-}
+/*span:last-child {*/
+/*    color: red;*/
+/*    !*display: none;*!*/
+/*}*/
 
 span {
     cursor: pointer;
@@ -223,11 +224,11 @@ div.player-form {
 /*}*/
 
 /* Chrome, Safari, Edge, Opera */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
+/*input::-webkit-outer-spin-button,*/
+/*input::-webkit-inner-spin-button {*/
+/*    -webkit-appearance: none;*/
+/*    margin: 0;*/
+/*}*/
 
 /* Firefox */
 input[type=number] {
@@ -279,7 +280,7 @@ input[type=number] {
     background-color: rgba(238, 156, 156, 0.8);
 }
 
-
+/*--------------------------------------------CHECKBOX----------------------------*/
 .checkbox-wrapper-8 .tgl {
     display: none;
 }
@@ -402,10 +403,41 @@ input[type=number] {
 .checkbox-wrapper-8 .tgl-skewed:checked + .tgl-btn:active:after {
     left: 10%;
 }
-
+/*--------------------------------------------------------------------------------------------------------*/
 /*.half {*/
 /*    display: none;*/
 /*}*/
 .selected {
     display: block;
+}
+
+.player-selected {
+    background-color: yellow;
+    text-decoration: underline;
+}
+
+div#players {
+    display: inline-block;
+    border: 1px solid;
+}
+div#players h3 {
+    /*margin:0;*/
+    /*padding: 10px 20px;*/
+    /*background-color: #3fad37;*/
+}
+
+.player {
+    font-size: 1.3em;
+
+    border-top: 1px solid;
+}
+.player span {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    padding: 10px 20px;
+}
+
+div.add-player {
+    background-color: indianred;
 }

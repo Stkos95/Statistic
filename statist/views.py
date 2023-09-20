@@ -57,8 +57,6 @@ class PlayersView(GroupRequiredMixin, TemplateView):
 
 
 
-
-# засунуть в кэш actions
 class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
@@ -72,15 +70,10 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
 
         formset = TestFormSet(initial=initial)
         actions = Actions.objects.filter(type=1)
-        print(formset.forms)
-        print(initial)
 
-
-        # TestFormSet = formset_factory(TestForm, formset=TestBaseFormSet)
-        # formset = TestFormSet()
-        # print(formset.forms)
         return self.render_to_response(
             context={'formset': formset,
+                     'players': players,
                      'actions': actions,
                      'statistic_type': 1})
 
@@ -108,7 +101,3 @@ class ResultStatisticView(GroupRequiredMixin,TemplateView):
         return HttpResponse('Опа, отправилось!')
 
 
-# def ajax_action(request):
-#     print(request.method)
-#     print(request.POST)
-#     return JsonResponse({'status': 'ok'})
