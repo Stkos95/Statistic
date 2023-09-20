@@ -85,12 +85,12 @@ function removePlayer(element) {
         parentElement.remove()
     }
 
-    let buttons = document.querySelectorAll('.add-player')
-    let LastButton = buttons[buttons.length - 1];
-    if (buttons.length === 2) {
-        LastButton.nextElementSibling.style.display = 'none'
-    }
-    LastButton.style.display = 'inline'
+    // let buttons = document.querySelectorAll('.add-player')
+    // let LastButton = buttons[buttons.length - 1];
+    // if (buttons.length === 2) {
+    //     LastButton.nextElementSibling.style.display = 'none'
+    // }
+    // LastButton.style.display = 'inline'
 
 
 }

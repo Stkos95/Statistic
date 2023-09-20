@@ -1,6 +1,6 @@
 div span:last-child {
     color: red;
-    display: none;
+    /*display: none;*/
 }
 
 span {

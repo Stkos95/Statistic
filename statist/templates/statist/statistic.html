@@ -8,8 +8,8 @@
 <script src="{% static 'js/plus-minus.js' %}"></script>
 
 <h1>Подсчет статистики:</h1>
-
-<span onclick="halfSelect(this)" data-half="1">1 Тайм</span>
+<input type="button" id="add-player" value="Add player">
+<span class="selected" onclick="halfSelect(this)" data-half="1">1 Тайм</span>
 <span onclick="halfSelect(this)" data-half="2">2 Тайм</span>
 <div class="checkbox-wrapper-8">
   <input onclick="checkboxOn(this)" class="tgl tgl-skewed" id="cb3-8" type="checkbox"/>
@@ -20,7 +20,7 @@
     {% csrf_token %}
 
 
-    <div data-half="1" class="half selected">
+    <div data-half="1" class="half">
 
 <table>
 
@@ -36,7 +36,7 @@
     </tr>
 
     {% for f in formset.forms %}
-    <tr class="field-row" style="display:none;">
+    <tr class="field-row">
 
         <td class="field">
         {{ f.name }}
@@ -46,10 +46,10 @@
                 <input class="fail" name="{{ act.slug }}-oshibka-1" type="number" value="0">
             </td>
         {% endfor %}
-        <td><span class="add-player" onclick="addPlayer(this)">+</span>
-
-        <span class="remove-player" onclick="removePlayer(this)">-</span>
+        <td>
+            <span class="remove-player" onclick="removePlayer(this)">-</span>
         </td>
+
     </tr>
     {% endfor %}
 
@@ -57,38 +57,38 @@
 </table>
     </div>
 
-    <div data-half="2" class="half">
-<table>
+<!--    <div data-half="2" class="half">-->
+<!--<table>-->
 
-    <tr>
-        <th class="head">
-            Имя игрока
-        </th>
-        {% for act in actions %}
-           <th class="head">
-               {{ act }}
-           </th>
-        {% endfor %}
-    </tr>
+<!--    <tr>-->
+<!--        <th class="head">-->
+<!--            Имя игрока-->
+<!--        </th>-->
+<!--        {% for act in actions %}-->
+<!--           <th class="head">-->
+<!--               {{ act }}-->
+<!--           </th>-->
+<!--        {% endfor %}-->
+<!--    </tr>-->
 
-    <tr class="field-row" style="display:none;">
-        <td class="field">
-        <input type="text" name="name-1">
-        </td>
-        {% for act in actions %}
-            <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno-1" type="number" value="0">
-                <input class="fail" name="{{ act.slug }}-oshibka-1" type="number" value="0">
-            </td>
-        {% endfor %}
-        <td><span class="add-player" onclick="addPlayer(this)">+</span>
+<!--    <tr class="field-row" style="display:none;">-->
+<!--        <td class="field">-->
+<!--        <input type="text" name="name-1">-->
+<!--        </td>-->
+<!--        {% for act in actions %}-->
+<!--            <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno-1" type="number" value="0">-->
+<!--                <input class="fail" name="{{ act.slug }}-oshibka-1" type="number" value="0">-->
+<!--            </td>-->
+<!--        {% endfor %}-->
+<!--        <td><span class="add-player" onclick="addPlayer(this)">+</span>-->
 
-        <span class="remove-player" onclick="removePlayer(this)">-</span>
-        </td>
-    </tr>
+<!--        <span class="remove-player" onclick="removePlayer(this)">-</span>-->
+<!--        </td>-->
+<!--    </tr>-->
 
 
-</table>
-</div>
+<!--</table>-->
+<!--</div>-->
 
 
 
@@ -102,9 +102,7 @@
 
 
 <script>
-    // const t = document.querySelector('input[type="checkbox"]')
-    //
-    // console.log(t.checked)
+
     const form = document.forms[0]
     function submit(e) {
         e.preventDefault();
@@ -129,16 +127,13 @@
 
 
 <script>
-    window.onload = function() {
-        let tables = document.querySelectorAll('table')
-        for (let table of tables){
-            addPlayer(null, table)
-        }
 
-    }
-    // addPlayer()
+    const addButton = document.querySelector('#add-player')
+    addButton.addEventListener('click', (event) => {
+        const data = document.querySelector('.selected').getAttribute('half-data')
+        console.log(data)
 
-
+    })
 
 
     // checkbox
@@ -164,19 +159,25 @@
     }
 
     function halfSelect(element) {
-        let halfs = document.querySelectorAll('.half');
+        let buttons = document.querySelectorAll('span[data-half]')
+        // let halfs = document.querySelectorAll('.half');
+        // console.log(halfs)
         let data = element.getAttribute('data-half');
-        for (let f of halfs) {
-            let h = f.getAttribute('data-half');
+        for (let button of buttons) {
+            let currentdata = button.getAttribute('data-half')
+            let currentDiv = document.querySelector(`div[data-half="${currentdata}"]`)
 
-            if (h === data) {
-                f.classList.add('selected')
+            if (data === currentdata) {
+
+                button.classList.add('selected');
+                currentDiv.style.display = 'block';
             } else {
-                f.classList.remove('selected')
+
+                currentDiv.style.display = 'none';
+                button.classList.remove('selected')
+
             }
         }
-
-
     }
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 

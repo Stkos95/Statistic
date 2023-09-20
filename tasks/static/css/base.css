@@ -177,7 +177,7 @@ div.detail p:nth-child(2) {
 
 span:last-child {
     color: red;
-    display: none;
+    /*display: none;*/
 }
 
 span {
@@ -403,9 +403,9 @@ input[type=number] {
     left: 10%;
 }
 
-.half {
-    display: none;
-}
+/*.half {*/
+/*    display: none;*/
+/*}*/
 .selected {
     display: block;
 }
