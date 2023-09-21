@@ -26,6 +26,8 @@
 <!--src="https://www.youtube.com/embed/tpqONSVoxrc">-->
 <!--</iframe>-->
 <!--<input type="button" id="add-player" value="Add player">-->
+<iframe data-status="stop" id="myiframe" width="1280" height="720" src="https://www.youtube.com/embed/jQqVZrYYd0Y?rel=0&enablejsapi=1"></iframe>
+
 <span class="selected" onclick="halfSelect(this)" data-half="1">1 Тайм</span>
 <span onclick="halfSelect(this)" data-half="2">2 Тайм</span>
 <div class="checkbox-wrapper-8">
@@ -42,9 +44,6 @@
 <table>
 
     <tr>
-        <th class="head">
-            Имя игрока
-        </th>
         {% for act in actions %}
            <th class="head">
                {{ act }}
@@ -52,12 +51,8 @@
         {% endfor %}
     </tr>
 
-    {% for f in formset.forms %}
-    <tr class="field-row">
 
-        <td class="field">
-        {{ f.name }}
-        </td>
+    <tr>
         {% for act in actions %}
             <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno-1" type="number" value="0">
                 <input class="fail" name="{{ act.slug }}-oshibka-1" type="number" value="0">
@@ -68,12 +63,11 @@
         </td>
 
     </tr>
-    {% endfor %}
+
 
 
 </table>
     </div>
-<!--<video src="https://www.youtube.com/watch?v=s3T-w2jhDHE&t=1455s"></video>-->
 
 <input type="hidden" name="statistic_type" value="{{ statistic_type }}">
 
@@ -87,7 +81,14 @@
     {% endfor %}
 </select>
 
-
+<!--<input type="button" value="Play" onclick="controlVideo('playVideo');">-->
+<!--<script>-->
+<!-- window.onload = function() {-->
+<!--    let iframe = document.getElementById("myiframe");-->
+<!--    iframe.width = iframe.contentWindow.document.body.scrollWidth;-->
+<!--    iframe.height = iframe.contentWindow.document.body.scrollHeight;-->
+<!-- }-->
+<!--</script>-->
 
 
 <script>
@@ -122,7 +123,8 @@
 
     //------------------------------- function add field to choose a player, add button ready, add plus button
     function addPlayer(event) {
-        let addField = document.querySelector('#player-select').cloneNode(true)
+        let addField = document.querySelector('#player-select').cloneNode(true);
+        addField.removeAttribute('id')
         let addConfirmButton = document.createElement('input');
         addConfirmButton.setAttribute('type', 'button');
         addConfirmButton.setAttribute('value', '+');
@@ -154,6 +156,7 @@
         if (myDiv.children.length > 1) {
             return false
         }
+
         myDiv.insertBefore(addField,event.target )
         myDiv.insertBefore(addConfirmButton, event.target)
         myDiv.appendChild(readyButton)
@@ -170,17 +173,34 @@
         })
     }
 
+    document.addEventListener('keydown', (event) =>{
 
+        if (event.key === ' ') {
+            let command
+            let iframe = document.getElementById("myiframe")
+            const data = iframe.getAttribute('data-status')
+            let win = iframe.contentWindow;
+            if (data === 'stop') {
+                command = 'playVideo'
+                iframe.setAttribute('data-status', 'play')
+            } else {
+                command = 'pauseVideo'
+                iframe.setAttribute('data-status', 'stop')
+            }
+            // let iframe = document.getElementById("myiframe").contentWindow;
+            win.postMessage('{"event":"command","func":"' + command + '","args":""}',
+    "*")
+        }
+    })
 
-    // const allPlayers = document.querySelectorAll('.player')
-    // console.log(allPlayers)
-    // allPlayers.forEach((element) => {
-    //     element.addEventListener('click', (event) => {
-    //         console.log(element)
-    //     })
-    // })
-
-
+// function controlVideo(vidFunc) {
+//
+//   var iframe = document.getElementsByTagName("iframe")[0].contentWindow;
+//   iframe.postMessage(
+//     '{"event":"command","func":"' + vidFunc + '","args":""}',
+//     "*"
+//   );
+// }
 
 </script>
 

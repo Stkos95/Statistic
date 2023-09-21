@@ -223,12 +223,12 @@ div.player-form {
 
 /*}*/
 
-/* Chrome, Safari, Edge, Opera */
-/*input::-webkit-outer-spin-button,*/
-/*input::-webkit-inner-spin-button {*/
-/*    -webkit-appearance: none;*/
-/*    margin: 0;*/
-/*}*/
+ /*Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 
 /* Firefox */
 input[type=number] {
@@ -417,6 +417,7 @@ input[type=number] {
 }
 
 div#players {
+    float: left;
     display: inline-block;
     border: 1px solid;
 }
@@ -428,7 +429,6 @@ div#players h3 {
 
 .player {
     font-size: 1.3em;
-
     border-top: 1px solid;
 }
 .player span {
@@ -441,3 +441,8 @@ div#players h3 {
 div.add-player {
     background-color: indianred;
 }
+
+#player-select {
+    display: none;
+}
+
