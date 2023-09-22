@@ -22,14 +22,45 @@
 </div>
 
 
-<!--<iframe width="1400" height="600"-->
-<!--src="https://www.youtube.com/embed/tpqONSVoxrc">-->
-<!--</iframe>-->
-<!--<input type="button" id="add-player" value="Add player">-->
 <iframe data-status="stop" id="myiframe" width="1280" height="720" src="https://www.youtube.com/embed/jQqVZrYYd0Y?rel=0&enablejsapi=1"></iframe>
+<div id="defend-actions">
 
-<span class="selected" onclick="halfSelect(this)" data-half="1">1 Тайм</span>
-<span onclick="halfSelect(this)" data-half="2">2 Тайм</span>
+    <table>
+
+<!--    <tr>-->
+<!--        {% for act in actions_by_category.2 %}-->
+<!--           <th class="head">-->
+<!--               {{ act }}-->
+<!--           </th>-->
+<!--        {% endfor %}-->
+<!--    </tr>-->
+
+
+
+        {% for act in actions_by_category.2 %}
+        <tr>
+                       <th class="head">
+               {{ act }}
+           </th>
+            <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno" type="number" value="0">
+                <input class="fail" name="{{ act.slug }}-oshibka" type="number" value="0">
+            </td>
+        {% endfor %}
+
+    </tr>
+
+
+
+    </table>
+</div>
+
+
+
+
+<span class="half selected" onclick="halfSelect(this)" data-half="1">1 Тайм</span>
+<span class="half" onclick="halfSelect(this)" data-half="2">2 Тайм</span>
+
+
 <div class="checkbox-wrapper-8">
   <input onclick="checkboxOn(this)" class="tgl tgl-skewed" id="cb3-8" type="checkbox"/>
   <label class="tgl-btn" data-tg-off="OFF" data-tg-on="ON" for="cb3-8"></label>
@@ -39,12 +70,12 @@
     {% csrf_token %}
 
 
-    <div data-half="1" class="half">
-
+<!--    <div data-half="1" class="half">-->
+<div id="atack-actions">
 <table>
 
     <tr>
-        {% for act in actions %}
+        {% for act in actions_by_category.1 %}
            <th class="head">
                {{ act }}
            </th>
@@ -53,14 +84,11 @@
 
 
     <tr>
-        {% for act in actions %}
+        {% for act in actions_by_category.1 %}
             <td class="field"><input data-half="1" class="success"  name="{{ act.slug }}-uspeshno-1" type="number" value="0">
                 <input class="fail" name="{{ act.slug }}-oshibka-1" type="number" value="0">
             </td>
         {% endfor %}
-        <td>
-            <span class="remove-player" onclick="removePlayer(this)">-</span>
-        </td>
 
     </tr>
 
@@ -74,6 +102,7 @@
 <input type="submit" value="Подтвердить">
 <input type="button" id="ajax-send" value="Подтвердить ajax">
 </form>
+
 
 <select name="player-select" id="player-select">
     {% for player in players %}
@@ -92,7 +121,22 @@
 
 
 <script>
-<!--    -------------------- add players to count statistic ------------------- -->
+        function halfSelect(element) {
+        let buttons = document.querySelectorAll('.half')
+        let data = element.getAttribute('data-half');
+
+        for (let button of buttons) {
+            if (button.getAttribute('data-half') === data) {
+                button.classList.add('selected');
+
+            } else {
+                button.classList.remove('selected')
+            }
+        }
+    }
+
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
+// <!--    -------------------- add players to count statistic ------------------- -->
     let players = document.querySelector('#players');
     function confirmPlayer(event) {
 
@@ -193,14 +237,64 @@
         }
     })
 
-// function controlVideo(vidFunc) {
-//
-//   var iframe = document.getElementsByTagName("iframe")[0].contentWindow;
-//   iframe.postMessage(
-//     '{"event":"command","func":"' + vidFunc + '","args":""}',
-//     "*"
-//   );
-// }
+    function eventCount(event) {
+        const action = event.target.getAttribute('name')
+        const half = document.querySelector('.half.selected').getAttribute('data-half')
+        const player = document.querySelector('.player-selected')
+        if (!player) {
+            alert('Не выбран игрок, для которого считается статистика')
+            return false
+        }
+        const player_id = player.getAttribute('data-id')
+
+
+
+        url = "{% url 'statistic:result' %}"
+        let formData = new FormData()
+
+        formData.append('player_id', player_id);
+        formData.append('half', half);
+        formData.append('action', action);
+        const body = {
+            'player_id': player_id,
+            'half': half,
+            'action': action
+        }
+
+        let options = {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken,
+            "X-Requested-With": "XMLHttpRequest"},
+            body: JSON.stringify(body),
+            dataType: 'json',
+            // mode: 'same-origin'
+        }
+        // options['body'] = formData
+
+        fetch(url, options).then(response => response.json())
+
+
+
+
+    }
+
+    function checkboxOn(element) {
+        const inputs = document.querySelectorAll('input[type="number"]');
+        if (element.checked) {
+            inputs.forEach((element) => {
+                element.style.cursor = 'pointer'
+                element.addEventListener('click', eventCount)
+            })
+        } else {
+            inputs.forEach((element) => {
+                element.style.cursor = 'text'
+                element.removeEventListener('click', eventCount, false)
+            })
+        }
+    }
+
+
+
 
 </script>
 
@@ -261,25 +355,25 @@
 <!--    //     }-->
 <!--    // }-->
 
-<!--    // function halfSelect(element) {-->
-<!--    //     let buttons = document.querySelectorAll('span[data-half]')-->
-<!--    //     let data = element.getAttribute('data-half');-->
-<!--    //     for (let button of buttons) {-->
-<!--    //         let currentdata = button.getAttribute('data-half')-->
-<!--    //         let currentDiv = document.querySelector(`div[data-half="${currentdata}"]`)-->
-<!--    //-->
-<!--    //         if (data === currentdata) {-->
-<!--    //-->
-<!--    //             button.classList.add('selected');-->
-<!--    //             currentDiv.style.display = 'block';-->
-<!--    //         } else {-->
-<!--    //-->
-<!--    //             currentDiv.style.display = 'none';-->
-<!--    //             button.classList.remove('selected')-->
-<!--    //-->
-<!--    //         }-->
-<!--    //     }-->
-<!--    // }-->
+    // function halfSelect(element) {
+    //     let buttons = document.querySelectorAll('span[data-half]')
+    //     let data = element.getAttribute('data-half');
+    //     for (let button of buttons) {
+    //         let currentdata = button.getAttribute('data-half')
+    //         let currentDiv = document.querySelector(`div[data-half="${currentdata}"]`)
+    //
+    //         if (data === currentdata) {
+    //
+    //             button.classList.add('selected');
+    //             currentDiv.style.display = 'block';
+    //         } else {
+    //
+    //             currentDiv.style.display = 'none';
+    //             button.classList.remove('selected')
+    //
+    //         }
+    //     }
+    // }
 <!--    // const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;-->
 <!--    //-->
 <!--    // const sendButton = document.querySelector('#ajax-send')-->

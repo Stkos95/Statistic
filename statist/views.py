@@ -8,6 +8,10 @@ from .models import Actions, Players
 from .forms import TestForm
 from statist.serialization1 import serialisation1
 from django.forms import formset_factory, BaseFormSet
+from statist.db.db import db_processing
+
+import json
+
 
 # class TestBaseFormSet(BaseFormSet):
 #     def add_fields(self, form, index):
@@ -17,8 +21,7 @@ from django.forms import formset_factory, BaseFormSet
 #             form.fields[action.slug] = forms.IntegerField(label=action.name,min_value=0)
 
 
-
-
+seldom_actions = ['Обводка', 'Перехват', 'Отбор']
 
 class GroupRequiredMixin(AccessMixin):
     permission_denied_message = 'You have no permission for that section...'
@@ -62,6 +65,10 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         players = Players.objects.all()
+        action_by_category = {
+            '1': [],
+            '2': []
+        }
 
         initial = []
         for player in players:
@@ -70,9 +77,15 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
 
         formset = TestFormSet(initial=initial)
         actions = Actions.objects.filter(type=1)
+        for i in actions:
+            if i.name not in seldom_actions:
+                action_by_category['1'].append(i)
+            else:
+                action_by_category['2'].append(i)
 
         return self.render_to_response(
             context={'formset': formset,
+                     'actions_by_category': action_by_category,
                      'players': players,
                      'actions': actions,
                      'statistic_type': 1})
@@ -92,12 +105,32 @@ class ResultStatisticView(GroupRequiredMixin,TemplateView):
 
     def post(self, request, *args, **kwargs):
         print(request.POST)
+        db = db_processing()
+
+        data = json.load(request)
+        res = db.test.update_one(data, {'$inc':{'value': 1}}, upsert=True)
+        print(res)
+
+
+
         # print(request.POST)
-        data = dict(request.POST)
+        # data = dict(request.POST)
 
         # players_statistic_json = serialisation1(data)
         # print(players_statistic_json)
 
-        return HttpResponse('Опа, отправилось!')
+        return JsonResponse({'status': 'OK'})
 
 
+def ajax(request):
+
+    data = json.load(request)
+    player_id = data['player_id']
+    half = data['half']
+
+    db = db_processing()
+    res = db.test.find({'player_id': player_id,
+                  'half': half
+    })
+    print(res)
+    return JsonResponse(res)

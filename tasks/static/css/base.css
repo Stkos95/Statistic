@@ -404,12 +404,10 @@ input[type=number] {
     left: 10%;
 }
 /*--------------------------------------------------------------------------------------------------------*/
-/*.half {*/
-/*    display: none;*/
+
+/*.selected {*/
+/*    display: block;*/
 /*}*/
-.selected {
-    display: block;
-}
 
 .player-selected {
     background-color: yellow;
@@ -446,3 +444,14 @@ div.add-player {
     display: none;
 }
 
+iframe {
+    float: left;
+}
+
+#defend-actions {
+    display: inline-block;
+}
+
+.half.selected {
+    background-color: cyan;
+}
