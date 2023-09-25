@@ -8,7 +8,8 @@ from .models import Actions, Players
 from .forms import TestForm
 from statist.serialization1 import serialisation1
 from django.forms import formset_factory, BaseFormSet
-from statist.db.db import db_processing
+# from statist.db.db import db_processing
+import redis
 
 import json
 
@@ -104,12 +105,16 @@ class ResultStatisticView(GroupRequiredMixin,TemplateView):
 
 
     def post(self, request, *args, **kwargs):
-        print(request.POST)
-        db = db_processing()
+        # print(request.POST)
+        # db = db_processing()
+        #
+        # data = json.load(request)
+        #
+        # data.pop('_id')
+        # print(data)
+        # res = db.test.update_one(data, {'$inc':{'value': 1}}, upsert=True)
+        # print(res)
 
-        data = json.load(request)
-        res = db.test.update_one(data, {'$inc':{'value': 1}}, upsert=True)
-        print(res)
 
 
 
@@ -122,15 +127,72 @@ class ResultStatisticView(GroupRequiredMixin,TemplateView):
         return JsonResponse({'status': 'OK'})
 
 
-def ajax(request):
+r = redis.Redis(host='172.26.0.2', port=6379, decode_responses=True)
+
+
+def get_any_data(request, *args):
+    data = json.load(request)
+    return (data.get(i) for i in args)
+
+def initial_players(request):
 
     data = json.load(request)
-    player_id = data['player_id']
-    half = data['half']
+    if data.get('initial'):
+        keys = (f'1:{data["player_id"]}', f'2:{data["player_id"]}')
+        mapping = {action: 0 for action in data.get('actions')}
 
-    db = db_processing()
-    res = db.test.find({'player_id': player_id,
-                  'half': half
-    })
-    print(res)
-    return JsonResponse(res)
+        for key in keys:
+            r.hset(key, mapping=mapping)
+
+        return JsonResponse({'response': 'ok'})
+
+
+def count_statistic(request):
+    half, player_id, action = get_any_data(request, 'half', 'player_id', 'action')
+    key = f'{half}:{player_id}'
+    r.hincrby(key, action, 1)
+    new_value = r.hget(key, action)
+    print(r.hget(key, action))
+
+    return JsonResponse({'response': 'ok',
+                         'value': new_value})
+
+
+def get_player_data(request):
+    half, player_id = get_any_data(request, 'half', 'player_id')
+    key = f'{half}:{player_id}'
+
+    res = r.hgetall(key)
+
+    response = {
+        'status': 'ok',
+        'data': res
+    }
+
+    return JsonResponse(response)
+
+
+
+
+
+
+
+
+
+
+    # data = json.load(request)
+    # print(data)
+
+    #
+    # db = db_processing()
+    # res = db.test.find({'player_id': player_id,
+    #               'half': half
+    # })
+    # res = list(map(lambda x: str(x), (player[x] for player in res for x in player if x == '_id' ) ))
+    # # res = list((player[x] for player in res for x in player if x == '_id' ))
+    # print(res)
+    # # response = {
+    # #     'status': 'ok',
+    # #     'data': list(res)}
+    # # print(response)
+
