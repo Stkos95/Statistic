@@ -101,18 +101,21 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
         players = Players.objects.all()
         actions = Actions.objects.all()
         halfs_players = r.keys()
-        result = {}
+
         for key in halfs_players:
+            result = {}
             half, player_id = key.split(':')
-            player_name = [i.name for i in players if i.id == int(player_id)][0]
-            result.setdefault(player_name, {})
-            # result.setdefault(half, {})
-            result[player_name].setdefault(half, {})
+            player_name, player_photo = [(i.name, i.photo) for i in players if i.id == int(player_id)][0]
+            result.setdefault(half, {})
             data = r.hgetall(key)
             for action in actions:
                 value = {i: data[f'{action.slug}-{i}'] for i in self.status}
-                result[player_name][half][action.name] = value
-        pprint(result)
+                result[half][action.name] = value
+            # function(game_name=game_name,
+            #          game_date=game_date,
+            #          player_photo=player_photo,
+            #          player_actions=player_actions)
+            pprint(result)
 
         return JsonResponse({'status': 'hello'})
 

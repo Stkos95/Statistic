@@ -69,7 +69,7 @@ for player, halfs in td.items():
     for half, actions in halfs.items():
         ttd = 0
         result_actions[player].setdefault(half, {})
-        print(actions)
+        # print(actions)
         value = ''
         for action, status in actions.items():
             success = int(status['success'])
@@ -82,6 +82,6 @@ for player, halfs in td.items():
             value = f'{total} / {success} / {percent_success} %'
             result_actions[player][half][action] = value
             ttd += success + fail
-        result_actions[player][half]['ТТД'] = ttd
+        # result_actions[player][half]['ТТД'] = ttd
 
 pprint(result_actions)
