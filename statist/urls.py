@@ -11,5 +11,6 @@ urlpatterns = [
     path('result/', views.ResultStatisticView.as_view(), name='result'),
     path('initial/', views.initial_players, name='initial_players'),
     path('count/', views.count_statistic, name='count'),
-    path('player/', views.get_player_data, name='player_data')
+    path('player/', views.get_player_data, name='player_data'),
+    path('celery/', views.celery_test, name='celery')
 ]

@@ -11,8 +11,9 @@ from django.forms import formset_factory, BaseFormSet
 # from statist.db.db import db_processing
 import redis
 
-import json
+from .tasks import add
 
+import json
 
 # class TestBaseFormSet(BaseFormSet):
 #     def add_fields(self, form, index):
@@ -23,6 +24,7 @@ import json
 
 
 seldom_actions = ['Обводка', 'Перехват', 'Отбор']
+
 
 class GroupRequiredMixin(AccessMixin):
     permission_denied_message = 'You have no permission for that section...'
@@ -52,13 +54,14 @@ class PlayersView(GroupRequiredMixin, TemplateView):
             return HttpResponseForbidden(self.get_permission_denied_message())
         return super().get(request, *args, **kwargs)
 
-
     def get_template_names(self):
         if self.request.method == 'POST':
             return ['statist/statistic.html']
         else:
             return super().get_template_names()
 
+
+r = redis.Redis(host='172.26.0.2', port=6379, decode_responses=True)
 
 
 class CountStatisticView(GroupRequiredMixin, TemplateView):
@@ -70,13 +73,6 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
             '1': [],
             '2': []
         }
-
-        initial = []
-        for player in players:
-            initial.append({'name': player})
-        TestFormSet = formset_factory(TestForm)
-
-        formset = TestFormSet(initial=initial)
         actions = Actions.objects.filter(type=1)
         for i in actions:
             if i.name not in seldom_actions:
@@ -85,66 +81,66 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
                 action_by_category['2'].append(i)
 
         return self.render_to_response(
-            context={'formset': formset,
-                     'actions_by_category': action_by_category,
-                     'players': players,
-                     'actions': actions,
-                     'statistic_type': 1})
+            context={
+                'actions_by_category': action_by_category,
+                'players': players,
+                'actions': actions,
+                'statistic_type': 1})
 
-
-
-
-
-class ResultStatisticView(GroupRequiredMixin,TemplateView):
+from pprint import pprint
+class ResultStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statistic/count.html'
+    status = ('success', 'fail')
 
     def get(self, request, *args, **kwargs):
-
         return HttpResponse('Опа, отправилось!')
 
-
-
     def post(self, request, *args, **kwargs):
-        # print(request.POST)
-        # db = db_processing()
-        #
-        # data = json.load(request)
-        #
-        # data.pop('_id')
-        # print(data)
-        # res = db.test.update_one(data, {'$inc':{'value': 1}}, upsert=True)
-        # print(res)
+        game_name = request.POST.get('game-name')
+        game_date = request.POST.get('game-date')
+        players = Players.objects.all()
+        actions = Actions.objects.all()
+        halfs_players = r.keys()
+        result = {}
+        for key in halfs_players:
+            half, player_id = key.split(':')
+            player_name = [i.name for i in players if i.id == int(player_id)][0]
+            result.setdefault(player_name, {})
+            # result.setdefault(half, {})
+            result[player_name].setdefault(half, {})
+            data = r.hgetall(key)
+            for action in actions:
+                value = {i: data[f'{action.slug}-{i}'] for i in self.status}
+                result[player_name][half][action.name] = value
+        pprint(result)
 
+        return JsonResponse({'status': 'hello'})
 
-
-
-        # print(request.POST)
-        # data = dict(request.POST)
-
-        # players_statistic_json = serialisation1(data)
-        # print(players_statistic_json)
-
-        return JsonResponse({'status': 'OK'})
-
-
-r = redis.Redis(host='172.26.0.2', port=6379, decode_responses=True)
 
 
 def get_any_data(request, *args):
     data = json.load(request)
     return (data.get(i) for i in args)
 
+
 def initial_players(request):
-
     data = json.load(request)
-    if data.get('initial'):
-        keys = (f'1:{data["player_id"]}', f'2:{data["player_id"]}')
-        mapping = {action: 0 for action in data.get('actions')}
 
-        for key in keys:
+    keys = (f'1:{data["player_id"]}', f'2:{data["player_id"]}')
+    mapping = {action: 0 for action in data.get('actions')}
+    result = {}
+    data_exist = False
+    for half, key in enumerate(keys, start=1):
+        data_half = r.hgetall(key)
+        if data_half:
+            data_exist = True
+            break
+        else:
             r.hset(key, mapping=mapping)
+    if data_exist:
+        return JsonResponse({'status': 'exist'})
 
-        return JsonResponse({'response': 'ok'})
+    return JsonResponse({'status': 'ok'})
 
 
 def count_statistic(request):
@@ -174,25 +170,7 @@ def get_player_data(request):
 
 
 
+def celery_test(request):
 
-
-
-
-
-
-    # data = json.load(request)
-    # print(data)
-
-    #
-    # db = db_processing()
-    # res = db.test.find({'player_id': player_id,
-    #               'half': half
-    # })
-    # res = list(map(lambda x: str(x), (player[x] for player in res for x in player if x == '_id' ) ))
-    # # res = list((player[x] for player in res for x in player if x == '_id' ))
-    # print(res)
-    # # response = {
-    # #     'status': 'ok',
-    # #     'data': list(res)}
-    # # print(response)
-
+    add.apply_async()
+    return JsonResponse({'response': 'ok'})

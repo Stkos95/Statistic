@@ -41,9 +41,9 @@
             <th class="head">
                 {{ act }}
             </th>
-            <td class="field"><input data-half="1" class="success" name="{{ act.slug }}-uspeshno" type="number"
+            <td class="field"><input data-half="1" class="success" name="{{ act.slug }}-success" type="number"
                                      value="0">
-                <input class="fail" name="{{ act.slug }}-oshibka" type="number" value="0">
+                <input class="fail" name="{{ act.slug }}-fail" type="number" value="0">
             </td>
             {% endfor %}
 
@@ -64,6 +64,10 @@
 </div>
 
 <form action="{% url 'statistic:result' %}" method="post">
+    <label for="game-name">Название матча:</label>
+    <input type="text" id="game-name" name="game-name">
+    <label for="game-date">Дата матча:</label>
+    <input type="date" id="game-date" name="game-date">
     {% csrf_token %}
 
 
@@ -82,22 +86,21 @@
 
             <tr>
                 {% for act in actions_by_category.1 %}
-                <td class="field"><input data-half="1" class="success" name="{{ act.slug }}-uspeshno" type="number"
+                <td class="field"><input data-half="1" class="success" name="{{ act.slug }}-success" type="number"
                                          value="0">
-                    <input class="fail" name="{{ act.slug }}-oshibka" type="number" value="0">
+                    <input class="fail" name="{{ act.slug }}-fail" type="number" value="0">
                 </td>
                 {% endfor %}
 
             </tr>
-
-
+            
         </table>
     </div>
 
     <input type="hidden" name="statistic_type" value="{{ statistic_type }}">
 
     <input type="submit" value="Подтвердить">
-    <input type="button" id="ajax-send" value="Подтвердить ajax">
+<!--    <input type="button" id="ajax-send" value="Подтвердить ajax">-->
 </form>
 
 
@@ -108,8 +111,10 @@
 </select>
 
 
-
 <script>
+    let actions = document.querySelectorAll('input[type="number"]')
+
+
     function sendAjax(url, body) {
         let options = {
             method: 'POST',
@@ -156,7 +161,7 @@
         const playerName = select.options[select.selectedIndex].text;
         let div = document.createElement('div');
         let playerSpan = document.createElement('span')
-        choosePlayerToCount(playerSpan)
+        choosePlayerToCount(div)
         let spanText = document.createTextNode(`${playerName}`)
         playerSpan.appendChild(spanText)
         div.setAttribute('class', 'player');
@@ -194,13 +199,10 @@
         readyButton.addEventListener('click', (event) => {
             let acts = []
 
-            const actions = document.querySelectorAll('input[type="number"]')
             actions.forEach((element) => {
 
                 acts.push(element.getAttribute('name'))
             })
-
-
             const url = '{% url "statistic:initial_players" %}'
             let body = {
                 'initial': true,
@@ -209,11 +211,10 @@
             const newPlayers = Array.from(document.querySelectorAll('.player')).slice(-count)
 
             for (let player of newPlayers) {
+                console.log(player)
                 body['player_id'] = player.getAttribute('data-id')
-                sendAjax(url, body)
+                let response = sendAjax(url, body)
             }
-
-
             count = 0
             const selectedPlayer = document.querySelector('.player-selected')
             if (!selectedPlayer) {
@@ -221,6 +222,7 @@
                 if (players.children.length > 1) {
                     const firstPlayer = players.children[1]
                     firstPlayer.classList.add('player-selected')
+                    getJsonPlayerData(firstPlayer)
                 }
             }
 
@@ -233,14 +235,10 @@
         })
 
         let myDiv = event.target.parentNode
-        if (myDiv.children.length > 1) {
-            return false
-        }
 
         myDiv.insertBefore(addField, event.target)
         myDiv.insertBefore(addConfirmButton, event.target)
         myDiv.appendChild(readyButton)
-
     }
 
     let buttonAddPlayer = document.querySelector('#add-player-button');
@@ -248,12 +246,11 @@
 
     //-----------------------------------------------------------------
     function choosePlayerToCount(element) {
-        // element.addEventListener('click',getJsonPlayerData )
         element.addEventListener('click', (event) => {
-            getJsonPlayerData(event)
+            getJsonPlayerData(element)
             let currentSelectedPlayer = document.querySelector('.player-selected');
             currentSelectedPlayer.classList.remove('player-selected')
-            element.parentNode.classList.add('player-selected')
+            element.classList.add('player-selected')
         })
     }
 
@@ -275,7 +272,6 @@
                 "*")
         }
     })
-
 
 
     function eventCount(event) {
@@ -318,12 +314,10 @@
         }
     }
 
-    function getJsonPlayerData(event) {
-        // if (event.target.parentNode.classList.contains('player-selected')) {
-        //     return false
-        // }
+    function getJsonPlayerData(element) {
 
-        const player_id = event.target.parentNode.getAttribute('data-id')
+
+        const player_id = element.getAttribute('data-id')
         const url = '{% url "statistic:player_data" %}'
         const half = document.querySelector('.half.selected').getAttribute('data-half')
 
@@ -332,13 +326,17 @@
             'player_id': player_id
         };
         const r = sendAjax(url, body)
-
         r.then(response => response.json()).then(data => {
-            let actions = document.querySelectorAll('input[type="number"]')
-            actions.forEach((element) => {
-                const name = element.getAttribute('name')
-                element.setAttribute('value', data['data'][name])
-            })
+
+            fillInputsByData(data)
+        })
+    }
+
+
+    function fillInputsByData(data) {
+        actions.forEach((element) => {
+            const name = element.getAttribute('name')
+            element.setAttribute('value', data['data'][name])
         })
     }
 
