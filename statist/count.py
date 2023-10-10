@@ -61,16 +61,15 @@ td = {'Женя': {'1': {'Обводка': {'fail': '0', 'success': '0'},
                       'Удар из штрафной': {'fail': '2', 'success': '0'},
                       'Удар из-за штрафной': {'fail': '0', 'success': '0'}}}}
 
-result_actions = {}
-result_TTD = {}
-for player, halfs in td.items():
 
-    result_actions.setdefault(player, {})
-    for half, actions in halfs.items():
+result_TTD = {}
+
+
+def accumulate_statistic(player_actions ):
+    result_actions = {}
+    for half, actions in player_actions.items():
         ttd = 0
-        result_actions[player].setdefault(half, {})
-        # print(actions)
-        value = ''
+        result_actions.setdefault(half, {})
         for action, status in actions.items():
             success = int(status['success'])
             fail = int(status['fail'])
@@ -80,8 +79,9 @@ for player, halfs in td.items():
             except ZeroDivisionError:
                 percent_success = 0
             value = f'{total} / {success} / {percent_success} %'
-            result_actions[player][half][action] = value
+            result_actions[half][action] = value
             ttd += success + fail
         # result_actions[player][half]['ТТД'] = ttd
 
-pprint(result_actions)
+    return result_actions
+

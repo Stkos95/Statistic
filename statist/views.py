@@ -9,6 +9,8 @@ from .forms import TestForm
 from statist.serialization1 import serialisation1
 from django.forms import formset_factory, BaseFormSet
 # from statist.db.db import db_processing
+from .count import accumulate_statistic
+
 import redis
 
 from .tasks import add
@@ -111,11 +113,12 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
             for action in actions:
                 value = {i: data[f'{action.slug}-{i}'] for i in self.status}
                 result[half][action.name] = value
+            d = accumulate_statistic(player_actions=result)
             # function(game_name=game_name,
             #          game_date=game_date,
             #          player_photo=player_photo,
             #          player_actions=player_actions)
-            pprint(result)
+            pprint(d)
 
         return JsonResponse({'status': 'hello'})
 
