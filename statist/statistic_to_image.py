@@ -198,6 +198,7 @@ class OurTeamImage(TeamStatisticImage):
 
 
     def put_first_half(self):
+        pass
 
 
     def put_statistic(self):

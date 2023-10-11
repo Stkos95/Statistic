@@ -52,5 +52,17 @@ class Players(models.Model):
     def __str__(self):
         return self.name
 
+class Results(models.Model):
+    player = models.ForeignKey('Players',
+                               on_delete=models.CASCADE)
+    # game = models.ForeignKey('Game',
+                             # on_delete=models.CASCADE, blank=True)
+    game = models.CharField(max_length=255)
+    half = models.IntegerField(blank=True, null=True)
+    action = models.ForeignKey('Actions',
+                               on_delete=models.CASCADE)
+    status = models.CharField(max_length=50)
+
+    value = models.IntegerField()
 
 

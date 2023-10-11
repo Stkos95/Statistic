@@ -4,7 +4,7 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.http import HttpResponse
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import AccessMixin
-from .models import Actions, Players
+from .models import Actions, Players, Results
 from .forms import TestForm
 from statist.serialization1 import serialisation1
 from django.forms import formset_factory, BaseFormSet
@@ -89,7 +89,10 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
                 'actions': actions,
                 'statistic_type': 1})
 
+
 from pprint import pprint
+
+
 class ResultStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statistic/count.html'
     status = ('success', 'fail')
@@ -103,25 +106,32 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
         players = Players.objects.all()
         actions = Actions.objects.all()
         halfs_players = r.keys()
-
+        result = {}
         for key in halfs_players:
-            result = {}
+
             half, player_id = key.split(':')
-            player_name, player_photo = [(i.name, i.photo) for i in players if i.id == int(player_id)][0]
-            result.setdefault(half, {})
+            player = [i for i in players if i.id == int(player_id)][0]
+            result.setdefault(player.name, {'photo': {}, 'actions': {}})
+            result[player.name]['photo'] = player.photo
             data = r.hgetall(key)
             for action in actions:
+                result[player.name]['actions'].setdefault(action.name, {})
                 value = {i: data[f'{action.slug}-{i}'] for i in self.status}
-                result[half][action.name] = value
-            d = accumulate_statistic(player_actions=result)
-            # function(game_name=game_name,
-            #          game_date=game_date,
-            #          player_photo=player_photo,
-            #          player_actions=player_actions)
-            pprint(d)
+                result[player.name]['actions'][action.name][half] = value
+                for i in value:
+                    Results.objects.create(
+                    player=player,
+                    game=game_name,
+                    action=action,
+                    status=i,
+                    value=value[i])
+
+
+
+        pprint(result)
+
 
         return JsonResponse({'status': 'hello'})
-
 
 
 def get_any_data(request, *args):
@@ -174,9 +184,6 @@ def get_player_data(request):
     return JsonResponse(response)
 
 
-
-
 def celery_test(request):
-
     add.apply_async()
     return JsonResponse({'response': 'ok'})
