@@ -1,87 +1,56 @@
 from pprint import pprint
 
-td = {'Женя': {'1': {'Обводка': {'fail': '0', 'success': '0'},
-                     'Отбор': {'fail': '0', 'success': '0'},
-                     'Передача вперед БЕЗ сопр': {'fail': '0', 'success': '0'},
-                     'Передача вперед с сопр.': {'fail': '0', 'success': '0'},
-                     'Передача назад БЕЗ сопр': {'fail': '0', 'success': '0'},
-                     'Передача назад с сопр': {'fail': '0', 'success': '0'},
-                     'Перехват': {'fail': '0', 'success': '0'},
-                     'Прием мяча': {'fail': '0', 'success': '0'},
-                     'Удар из штрафной': {'fail': '0', 'success': '0'},
-                     'Удар из-за штрафной': {'fail': '0', 'success': '0'}},
-               '2': {'Обводка': {'fail': '0', 'success': '0'},
-                     'Отбор': {'fail': '0', 'success': '0'},
-                     'Передача вперед БЕЗ сопр': {'fail': '0', 'success': '0'},
-                     'Передача вперед с сопр.': {'fail': '0', 'success': '0'},
-                     'Передача назад БЕЗ сопр': {'fail': '0', 'success': '0'},
-                     'Передача назад с сопр': {'fail': '0', 'success': '0'},
-                     'Перехват': {'fail': '0', 'success': '0'},
-                     'Прием мяча': {'fail': '0', 'success': '0'},
-                     'Удар из штрафной': {'fail': '0', 'success': '0'},
-                     'Удар из-за штрафной': {'fail': '0', 'success': '0'}}},
-      'Илья': {'1': {'Обводка': {'fail': '0', 'success': '0'},
-                     'Отбор': {'fail': '0', 'success': '0'},
-                     'Передача вперед БЕЗ сопр': {'fail': '0', 'success': '0'},
-                     'Передача вперед с сопр.': {'fail': '0', 'success': '0'},
-                     'Передача назад БЕЗ сопр': {'fail': '0', 'success': '0'},
-                     'Передача назад с сопр': {'fail': '0', 'success': '0'},
-                     'Перехват': {'fail': '0', 'success': '0'},
-                     'Прием мяча': {'fail': '0', 'success': '0'},
-                     'Удар из штрафной': {'fail': '0', 'success': '0'},
-                     'Удар из-за штрафной': {'fail': '0', 'success': '0'}},
-               '2': {'Обводка': {'fail': '1', 'success': '1'},
-                     'Отбор': {'fail': '0', 'success': '0'},
-                     'Передача вперед БЕЗ сопр': {'fail': '0', 'success': '0'},
-                     'Передача вперед с сопр.': {'fail': '0', 'success': '0'},
-                     'Передача назад БЕЗ сопр': {'fail': '0', 'success': '0'},
-                     'Передача назад с сопр': {'fail': '0', 'success': '0'},
-                     'Перехват': {'fail': '0', 'success': '0'},
-                     'Прием мяча': {'fail': '0', 'success': '0'},
-                     'Удар из штрафной': {'fail': '0', 'success': '0'},
-                     'Удар из-за штрафной': {'fail': '0', 'success': '0'}}},
-      'Костя': {'1': {'Обводка': {'fail': '1', 'success': '0'},
-                      'Отбор': {'fail': '0', 'success': '1'},
-                      'Передача вперед БЕЗ сопр': {'fail': '0', 'success': '0'},
-                      'Передача вперед с сопр.': {'fail': '0', 'success': '0'},
-                      'Передача назад БЕЗ сопр': {'fail': '0', 'success': '0'},
-                      'Передача назад с сопр': {'fail': '0', 'success': '0'},
-                      'Перехват': {'fail': '0', 'success': '0'},
-                      'Прием мяча': {'fail': '0', 'success': '0'},
-                      'Удар из штрафной': {'fail': '0', 'success': '0'},
-                      'Удар из-за штрафной': {'fail': '0', 'success': '0'}},
-                '2': {'Обводка': {'fail': '0', 'success': '0'},
-                      'Отбор': {'fail': '0', 'success': '0'},
-                      'Передача вперед БЕЗ сопр': {'fail': '0', 'success': '0'},
-                      'Передача вперед с сопр.': {'fail': '0', 'success': '0'},
-                      'Передача назад БЕЗ сопр': {'fail': '0', 'success': '0'},
-                      'Передача назад с сопр': {'fail': '0', 'success': '0'},
-                      'Перехват': {'fail': '0', 'success': '0'},
-                      'Прием мяча': {'fail': '0', 'success': '0'},
-                      'Удар из штрафной': {'fail': '2', 'success': '0'},
-                      'Удар из-за штрафной': {'fail': '0', 'success': '0'}}}}
-
+xx = {'Обводка': {'1': {'fail': '1', 'success': '0'},
+                  '2': {'fail': '0', 'success': '0'}},
+      'Отбор': {'1': {'fail': '0', 'success': '1'},
+                '2': {'fail': '0', 'success': '0'}},
+      'Передача вперед БЕЗ сопр': {'1': {'fail': '0',
+                                         'success': '0'},
+                                   '2': {'fail': '0',
+                                         'success': '0'}},
+      'Передача вперед с сопр.': {'1': {'fail': '0',
+                                        'success': '0'},
+                                  '2': {'fail': '0',
+                                        'success': '0'}},
+      'Передача назад БЕЗ сопр': {'1': {'fail': '0',
+                                        'success': '0'},
+                                  '2': {'fail': '0',
+                                        'success': '0'}},
+      'Передача назад с сопр': {'1': {'fail': '0',
+                                      'success': '0'},
+                                '2': {'fail': '0',
+                                      'success': '0'}},
+      'Перехват': {'1': {'fail': '0', 'success': '0'},
+                   '2': {'fail': '0', 'success': '0'}},
+      'Прием мяча': {'1': {'fail': '0', 'success': '0'},
+                     '2': {'fail': '0', 'success': '0'}},
+      'Удар из штрафной': {'1': {'fail': '0', 'success': '0'},
+                           '2': {'fail': '2', 'success': '0'}},
+      'Удар из-за штрафной': {'1': {'fail': '0',
+                                    'success': '0'},
+                              '2': {'fail': '0',
+                                    'success': '0'}}}
 
 result_TTD = {}
 
 
-def accumulate_statistic(player_actions ):
+def accumulate_statistic(player_actions):
     result_actions = {}
-    for half, actions in player_actions.items():
-        ttd = 0
-        result_actions.setdefault(half, {})
-        for action, status in actions.items():
-            success = int(status['success'])
-            fail = int(status['fail'])
+    for action_name, halfs in player_actions.items():
+        result_actions.setdefault(action_name, {})
+        for half, values in halfs.items():
+            result_actions[action_name].setdefault(half, {})
+            success = int(values['success'])
+            fail = int(values['fail'])
             total = success + fail
             try:
                 percent_success = int(success / total * 100)
             except ZeroDivisionError:
                 percent_success = 0
             value = f'{total} / {success} / {percent_success} %'
-            result_actions[half][action] = value
-            ttd += success + fail
-        # result_actions[player][half]['ТТД'] = ttd
-
+            result_actions[action_name][half] = value
     return result_actions
 
+#
+# z = accumulate_statistic(xx)
+# print(z)

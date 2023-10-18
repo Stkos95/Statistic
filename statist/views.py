@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django import forms
 from django.http import HttpResponseForbidden, JsonResponse
@@ -10,9 +11,9 @@ from statist.serialization1 import serialisation1
 from django.forms import formset_factory, BaseFormSet
 # from statist.db.db import db_processing
 from .count import accumulate_statistic
-
+from django.contrib.auth.views import LoginView
 import redis
-
+from .statistic_to_image import OurTeamImage
 from .tasks import add
 
 import json
@@ -91,7 +92,7 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
 
 
 from pprint import pprint
-
+import os
 
 class ResultStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statistic/count.html'
@@ -107,6 +108,7 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
         actions = Actions.objects.all()
         halfs_players = r.keys()
         result = {}
+        final = {}
         for key in halfs_players:
 
             half, player_id = key.split(':')
@@ -118,17 +120,24 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
                 result[player.name]['actions'].setdefault(action.name, {})
                 value = {i: data[f'{action.slug}-{i}'] for i in self.status}
                 result[player.name]['actions'][action.name][half] = value
-                for i in value:
-                    Results.objects.create(
-                    player=player,
-                    game=game_name,
-                    action=action,
-                    status=i,
-                    value=value[i])
+                # for i in value:
+                #     Results.objects.create(
+                #     player=player,
+                #     game=game_name,
+                #     action=action,
+                #     status=i,
+                #     value=value[i])
+        for player in result:
+            d = accumulate_statistic(result[player]['actions'])
+            # print(player, d)
+            image = OurTeamImage()
+            image.make_header(game_name, game_date, player, result[player]['photo'])
+            image.put_statistic(d)
+            image.show()
 
 
 
-        pprint(result)
+
 
 
         return JsonResponse({'status': 'hello'})
