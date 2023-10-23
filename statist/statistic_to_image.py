@@ -1,5 +1,5 @@
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-
+from io import BytesIO
 
 class TeamStatisticImage:
     def __init__(self, image_path: str | None = None):
@@ -128,4 +128,9 @@ class OurTeamImage(TeamStatisticImage):
                           size=30
                           )
             y += 100
-        self.image.show()
+
+    def save_to_bytes(self):
+        byte = BytesIO()
+        self.image.save(byte, format='JPEG')
+        return byte
+

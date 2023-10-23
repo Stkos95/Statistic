@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Actions, Players
+from .models import Actions, Players, ResultsJson
 
 @admin.register(Actions)
 class ActionsAdmin(admin.ModelAdmin):
@@ -11,3 +11,7 @@ class ActionsAdmin(admin.ModelAdmin):
 class PlayersAdmin(admin.ModelAdmin):
     list_display = ['name']
 
+
+@admin.register(ResultsJson)
+class ResultsJsonAdming(admin.ModelAdmin):
+    list_display = ('player', 'value')

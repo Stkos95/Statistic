@@ -66,3 +66,9 @@ class Results(models.Model):
     value = models.IntegerField()
 
 
+class ResultsJson(models.Model):
+    player = models.ForeignKey('Players',
+                               on_delete=models.CASCADE)
+    value = models.JSONField()
+
+

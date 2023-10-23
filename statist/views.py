@@ -5,7 +5,7 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.http import HttpResponse
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import AccessMixin
-from .models import Actions, Players, Results
+from .models import Actions, Players, ResultsJson
 from .forms import TestForm
 from statist.serialization1 import serialisation1
 from django.forms import formset_factory, BaseFormSet
@@ -14,9 +14,10 @@ from .count import accumulate_statistic
 from django.contrib.auth.views import LoginView
 import redis
 from .statistic_to_image import OurTeamImage
-from .tasks import add
-
+# from .tasks import add
+from io import BytesIO
 import json
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 # class TestBaseFormSet(BaseFormSet):
 #     def add_fields(self, form, index):
@@ -91,8 +92,50 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
                 'statistic_type': 1})
 
 
-from pprint import pprint
-import os
+# from pprint import pprint
+# import os
+# from dataclasses import dataclass
+#
+#
+#
+# @dataclass
+# class MatchInfo:
+#     game_name: str
+#     game_date: str
+#     players: list
+#     actions: list
+#
+# def test(match_info: MatchInfo):
+#     status = ('success', 'fail')
+#     halfs_players = r.keys()
+#     players_list = set(map(lambda x: x.split(':')[1], halfs_players))
+#     for pl in players_list:
+#         result = {}
+#         player = [i for i in match_info.players if i.id == int(pl)][0]
+#         halfs = [key for key in halfs_players if key.endswith(f':{pl}')]
+#         result['photo'] = player.photo
+#         result['actions'] = {}
+#         for h in halfs:
+#             half = h.split(':')[0]
+#             data = r.hgetall(h)
+#             for action in match_info.actions:
+#                 if action.name not in result['actions']:
+#                     result['actions'].setdefault(action.name, {})
+#                 value = {i: data[f'{action.slug}-{i}'] for i in status}
+#                 result['actions'][action.name][half] = value
+#         yield result
+
+
+
+
+from tg_bot.tasks import test1, final_task
+from .tasks import send_pictire
+from asgiref.sync import sync_to_async
+
+
+
+def get_player(pl, players):
+    return [i for i in players if i.id == int(pl)][0]
 
 class ResultStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statistic/count.html'
@@ -106,35 +149,46 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
         game_date = request.POST.get('game-date')
         players = Players.objects.all()
         actions = Actions.objects.all()
+        # actions = await sync_to_async(Actions.objects.all, thread_sensitive=True)()
+        # match_info = MatchInfo(
+        #     game_name=game_name,
+        #     game_date=game_date,
+        #     players=players,
+        #     actions=actions
+        # )
         halfs_players = r.keys()
-        result = {}
-        final = {}
-        for key in halfs_players:
 
-            half, player_id = key.split(':')
-            player = [i for i in players if i.id == int(player_id)][0]
-            result.setdefault(player.name, {'photo': {}, 'actions': {}})
-            result[player.name]['photo'] = player.photo
-            data = r.hgetall(key)
-            for action in actions:
-                result[player.name]['actions'].setdefault(action.name, {})
-                value = {i: data[f'{action.slug}-{i}'] for i in self.status}
-                result[player.name]['actions'][action.name][half] = value
-                # for i in value:
-                #     Results.objects.create(
-                #     player=player,
-                #     game=game_name,
-                #     action=action,
-                #     status=i,
-                #     value=value[i])
-        for player in result:
-            d = accumulate_statistic(result[player]['actions'])
-            # print(player, d)
+        players_list = set(map(lambda x: x.split(':')[1], halfs_players))
+        for pl in players_list:
+            result = {}
+            # player = await sync_to_async([i for i in players if i.id == int(pl)][0])
+            player = [i for i in players if i.id == int(pl)][0]
+            # player = await sync_to_async(get_player)(pl=pl, players=players)
+            halfs = [key for key in halfs_players if key.endswith(f':{pl}')]
+            result['photo'] = player.photo
+            result['actions'] = {}
+            for h in halfs:
+                half = h.split(':')[0]
+                data = r.hgetall(h)
+                for  action in actions:
+                    if action.name not in result['actions']:
+                        result['actions'].setdefault(action.name, {})
+                    value = {i: data[f'{action.slug}-{i}'] for i in self.status}
+                    result['actions'][action.name][half] = value
+            # ResultsJson.objects.create(
+            #     player=player,
+            #     value=result['actions']
+            # )
+
+
+            # test2.delay()
+
+            d = accumulate_statistic(result['actions'])
             image = OurTeamImage()
-            image.make_header(game_name, game_date, player, result[player]['photo'])
+            image.make_header(game_name, game_date, player.name, result['photo'])
             image.put_statistic(d)
-            image.show()
-
+            im = image.save_to_bytes().encode()
+            final_task.delay(photo=im)
 
 
 
@@ -189,7 +243,6 @@ def get_player_data(request):
         'status': 'ok',
         'data': res
     }
-
     return JsonResponse(response)
 
 
