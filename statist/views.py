@@ -1,32 +1,20 @@
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
-from django import forms
 from django.http import HttpResponseForbidden, JsonResponse
 from django.http import HttpResponse
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import AccessMixin
-from .models import Actions, Players, ResultsJson
-from .forms import TestForm
-from statist.serialization1 import serialisation1
-from django.forms import formset_factory, BaseFormSet
-# from statist.db.db import db_processing
+from .models import Actions, Players, Game
 from .count import accumulate_statistic
-from django.contrib.auth.views import LoginView
+from .utils.collect_data import RedisCollection
+
 import redis
-from .statistic_to_image import OurTeamImage
-# from .tasks import add
-from io import BytesIO
 import json
-from PIL import Image, ImageDraw, ImageFont, ImageOps
-
-# class TestBaseFormSet(BaseFormSet):
-#     def add_fields(self, form, index):
-#         super().add_fields(form, index)
-#         actions = Actions.objects.filter(type=1)
-#         for action in actions:
-#             form.fields[action.slug] = forms.IntegerField(label=action.name,min_value=0)
 
 
+
+
+
+r = redis.Redis(host='172.26.0.2', port=6379, decode_responses=True)
 seldom_actions = ['Обводка', 'Перехват', 'Отбор']
 
 
@@ -65,7 +53,7 @@ class PlayersView(GroupRequiredMixin, TemplateView):
             return super().get_template_names()
 
 
-r = redis.Redis(host='172.26.0.2', port=6379, decode_responses=True)
+
 
 
 class CountStatisticView(GroupRequiredMixin, TemplateView):
@@ -94,9 +82,14 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
 
 # from pprint import pprint
 # import os
-# from dataclasses import dataclass
+from dataclasses import dataclass
 #
-#
+
+@dataclass
+class MatchInfo:
+    game: Game
+    players: list
+    actions: list
 #
 # @dataclass
 # class MatchInfo:
@@ -128,14 +121,43 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
 
 
 
-from tg_bot.tasks import test1, final_task
-from .tasks import send_pictire
+# from tg_bot.tasks import test1, final_task
+# from .tasks import send_pictire
+from .tasks import make_and_send_image, add_result_to_db
 from asgiref.sync import sync_to_async
 
 
 
 def get_player(pl, players):
     return [i for i in players if i.id == int(pl)][0]
+def collect_value(r: RedisCollection, key):
+    half = key.split(':')[0]
+    data = r.get_hash_data_for_player(key)
+    return half, data
+
+
+def approriate_view(data, action):
+    status = ('success', 'fail')
+    value = {i: data[f'{action.slug}-{i}'] for i in status}
+    return value
+
+
+def get_player_info_add_to_db(r: RedisCollection, player_obj, match_info: MatchInfo):
+    new_player = {}
+
+    keys = r.get_keys_for_player(player_obj.id)
+    new_player['name'] = player_obj.name
+    new_player['photo'] = player_obj.photo
+    new_player['actions'] = dict()
+    for key in keys:
+        half, data = collect_value(r, key)
+        for action in match_info.actions:
+
+            if action.name not in new_player['actions']:
+                new_player['actions'].setdefault(action.name, {})
+            value = approriate_view(data, action)
+            new_player['actions'][action.name][half] = value
+    return new_player
 
 class ResultStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statistic/count.html'
@@ -147,48 +169,40 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         game_name = request.POST.get('game-name')
         game_date = request.POST.get('game-date')
+        game = Game(name=game_name,
+                    slug=f'{game_name}_slug',
+                    date=game_date)
+        game.save()
+        result = dict(match={'match_name': game_name, 'match_date': game_date,}, players=list())
+
         players = Players.objects.all()
         actions = Actions.objects.all()
-        # actions = await sync_to_async(Actions.objects.all, thread_sensitive=True)()
-        # match_info = MatchInfo(
-        #     game_name=game_name,
-        #     game_date=game_date,
-        #     players=players,
-        #     actions=actions
-        # )
-        halfs_players = r.keys()
+        match_info = MatchInfo(
+            game=game,
+            players=players,
+            actions=actions
+        )
 
-        players_list = set(map(lambda x: x.split(':')[1], halfs_players))
-        for pl in players_list:
-            result = {}
-            # player = await sync_to_async([i for i in players if i.id == int(pl)][0])
-            player = [i for i in players if i.id == int(pl)][0]
-            # player = await sync_to_async(get_player)(pl=pl, players=players)
-            halfs = [key for key in halfs_players if key.endswith(f':{pl}')]
-            result['photo'] = player.photo
-            result['actions'] = {}
-            for h in halfs:
-                half = h.split(':')[0]
-                data = r.hgetall(h)
-                for  action in actions:
-                    if action.name not in result['actions']:
-                        result['actions'].setdefault(action.name, {})
-                    value = {i: data[f'{action.slug}-{i}'] for i in self.status}
-                    result['actions'][action.name][half] = value
-            # ResultsJson.objects.create(
-            #     player=player,
-            #     value=result['actions']
-            # )
+        r = RedisCollection()
+        for player_id in r.get_player_ids_list():
+            player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
+            new_player = get_player_info_add_to_db(r, player_obj, match_info)
+            result['players'].append(new_player)
+
+        for player in result['players']:
+            photo = player.pop('photo')
+            add_result_to_db.delay(player, match_info.game.id)
 
 
-            # test2.delay()
+            d = accumulate_statistic(player['actions'])
+            make_and_send_image.delay(game_name, game_date, player.get('name'), d)
 
-            d = accumulate_statistic(result['actions'])
-            image = OurTeamImage()
-            image.make_header(game_name, game_date, player.name, result['photo'])
-            image.put_statistic(d)
-            im = image.save_to_bytes().encode()
-            final_task.delay(photo=im)
+            # image = OurTeamImage()
+            # image.make_header(game_name, game_date, player.get('name'), photo)
+            # image.put_statistic(d)
+            # image.show()
+            # im = image.save_to_bytes().encode()
+            # final_task.delay(data=result)
 
 
 
