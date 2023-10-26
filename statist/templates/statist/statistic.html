@@ -205,7 +205,7 @@
             })
             const url = '{% url "statistic:initial_players" %}'
             let body = {
-                'initial': true,
+                // 'initial': true,
                 'actions': acts
             }
             const newPlayers = Array.from(document.querySelectorAll('.player')).slice(-count)

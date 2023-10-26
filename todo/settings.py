@@ -88,7 +88,7 @@ DATABASES = {
         "NAME": "postgres1",
         "USER": "kos",
         "PASSWORD": "123",
-        "HOST": "172.17.0.4",
+        "HOST": "172.17.0.2",
         "PORT": "5432",
     }
 }
@@ -147,3 +147,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CRISPY_TEMPLATE_PACK = 'uni_form'
 CRISPY_TEMPLATE_PACK = "bootstrap4"
+
+REDIS_DB_ID = 'redis'
+REDIS_HOST = '172.17.0.4'
+REDIS_PORT = 6379

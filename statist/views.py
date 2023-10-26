@@ -1,21 +1,28 @@
 from django.contrib.auth.models import Group
+from django.contrib.auth.mixins import AccessMixin
 from django.http import HttpResponseForbidden, JsonResponse
 from django.http import HttpResponse
 from django.views.generic.base import TemplateView
-from django.contrib.auth.mixins import AccessMixin
+from django.conf import settings
+
 from .models import Actions, Players, Game
 from .count import accumulate_statistic
-from .utils.collect_data import RedisCollection
+from .utils.collect_data import RedisCollection, CustomRedis
+from .tasks import make_and_send_image, add_result_to_db
 
+from dataclasses import dataclass
 import redis
 import json
 
-
-
-
-
-r = redis.Redis(host='172.26.0.2', port=6379, decode_responses=True)
+r = CustomRedis(host='172.26.0.2', port=6379, decode_responses=True)
 seldom_actions = ['Обводка', 'Перехват', 'Отбор']
+
+
+@dataclass
+class MatchInfo:
+    game: Game
+    players: list
+    actions: list
 
 
 class GroupRequiredMixin(AccessMixin):
@@ -38,7 +45,7 @@ class GroupRequiredMixin(AccessMixin):
 
 class PlayersView(GroupRequiredMixin, TemplateView):
     group_name = 'Statistic'
-    template_name = 'statist/players.html'
+    template_name = 'statist/initial.html'
 
     def get(self, request, *args, **kwargs):
         allow = self.check_group()
@@ -53,13 +60,14 @@ class PlayersView(GroupRequiredMixin, TemplateView):
             return super().get_template_names()
 
 
-
-
-
 class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
     def get(self, request, *args, **kwargs):
+        new_redis_index = request.session.get(settings.REDIS_DB_ID, None)
+        if not new_redis_index:
+            new_redis_index = r.get_new_db_index()
+            request.session[settings.REDIS_DB_ID] = new_redis_index
         players = Players.objects.all()
         action_by_category = {
             '1': [],
@@ -80,56 +88,14 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
                 'statistic_type': 1})
 
 
-# from pprint import pprint
-# import os
-from dataclasses import dataclass
-#
-
-@dataclass
-class MatchInfo:
-    game: Game
-    players: list
-    actions: list
-#
-# @dataclass
-# class MatchInfo:
-#     game_name: str
-#     game_date: str
-#     players: list
-#     actions: list
-#
-# def test(match_info: MatchInfo):
-#     status = ('success', 'fail')
-#     halfs_players = r.keys()
-#     players_list = set(map(lambda x: x.split(':')[1], halfs_players))
-#     for pl in players_list:
-#         result = {}
-#         player = [i for i in match_info.players if i.id == int(pl)][0]
-#         halfs = [key for key in halfs_players if key.endswith(f':{pl}')]
-#         result['photo'] = player.photo
-#         result['actions'] = {}
-#         for h in halfs:
-#             half = h.split(':')[0]
-#             data = r.hgetall(h)
-#             for action in match_info.actions:
-#                 if action.name not in result['actions']:
-#                     result['actions'].setdefault(action.name, {})
-#                 value = {i: data[f'{action.slug}-{i}'] for i in status}
-#                 result['actions'][action.name][half] = value
-#         yield result
-
-
-
-
-# from tg_bot.tasks import test1, final_task
-# from .tasks import send_pictire
-from .tasks import make_and_send_image, add_result_to_db
-from asgiref.sync import sync_to_async
-
+class InitView(GroupRequiredMixin, TemplateView):
+    pass
 
 
 def get_player(pl, players):
     return [i for i in players if i.id == int(pl)][0]
+
+
 def collect_value(r: RedisCollection, key):
     half = key.split(':')[0]
     data = r.get_hash_data_for_player(key)
@@ -142,12 +108,11 @@ def approriate_view(data, action):
     return value
 
 
-def get_player_info_add_to_db(r: RedisCollection, player_obj, match_info: MatchInfo):
+def get_player_info(r: RedisCollection, player_obj: Players, match_info: MatchInfo):
     new_player = {}
 
     keys = r.get_keys_for_player(player_obj.id)
     new_player['name'] = player_obj.name
-    new_player['photo'] = player_obj.photo
     new_player['actions'] = dict()
     for key in keys:
         half, data = collect_value(r, key)
@@ -159,12 +124,10 @@ def get_player_info_add_to_db(r: RedisCollection, player_obj, match_info: MatchI
             new_player['actions'][action.name][half] = value
     return new_player
 
+
 class ResultStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statistic/count.html'
     status = ('success', 'fail')
-
-    def get(self, request, *args, **kwargs):
-        return HttpResponse('Опа, отправилось!')
 
     def post(self, request, *args, **kwargs):
         game_name = request.POST.get('game-name')
@@ -173,7 +136,7 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
                     slug=f'{game_name}_slug',
                     date=game_date)
         game.save()
-        result = dict(match={'match_name': game_name, 'match_date': game_date,}, players=list())
+        result = dict(match={'match_name': game_name, 'match_date': game_date, }, players=list())
 
         players = Players.objects.all()
         actions = Actions.objects.all()
@@ -183,31 +146,24 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
             actions=actions
         )
 
-        r = RedisCollection()
-        for player_id in r.get_player_ids_list():
+        rr = RedisCollection(host=settings.REDIS_HOST,
+                             port=settings.REDIS_PORT,
+                             decode_responses=True,
+                             db=request.session.get(settings.REDIS_DB_ID))
+
+        for player_id in rr.get_player_ids_list():
             player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
-            new_player = get_player_info_add_to_db(r, player_obj, match_info)
+            new_player = get_player_info(rr, player_obj, match_info)
             result['players'].append(new_player)
-
         for player in result['players']:
-            photo = player.pop('photo')
+            print(match_info.game.id)
             add_result_to_db.delay(player, match_info.game.id)
-
-
             d = accumulate_statistic(player['actions'])
             make_and_send_image.delay(game_name, game_date, player.get('name'), d)
 
-            # image = OurTeamImage()
-            # image.make_header(game_name, game_date, player.get('name'), photo)
-            # image.put_statistic(d)
-            # image.show()
-            # im = image.save_to_bytes().encode()
-            # final_task.delay(data=result)
-
-
-
-
-
+            rr.flushdb()
+            print(request.session[settings.REDIS_DB_ID])
+            del request.session[settings.REDIS_DB_ID]
         return JsonResponse({'status': 'hello'})
 
 
@@ -217,41 +173,57 @@ def get_any_data(request, *args):
 
 
 def initial_players(request):
+    rr = CustomRedis(host=settings.REDIS_HOST,
+                     port=settings.REDIS_PORT,
+                     decode_responses=True,
+                     db=request.session.get(settings.REDIS_DB_ID))
     data = json.load(request)
 
     keys = (f'1:{data["player_id"]}', f'2:{data["player_id"]}')
     mapping = {action: 0 for action in data.get('actions')}
     result = {}
-    data_exist = False
     for half, key in enumerate(keys, start=1):
-        data_half = r.hgetall(key)
+        data_half = rr.hgetall(key)
         if data_half:
             data_exist = True
-            break
+            return JsonResponse({'status': 'exist'})
+            # break
         else:
-            r.hset(key, mapping=mapping)
-    if data_exist:
-        return JsonResponse({'status': 'exist'})
+            rr.hset(key, mapping=mapping)
+    # if data_exist:
+    #     return JsonResponse({'status': 'exist'})
 
     return JsonResponse({'status': 'ok'})
 
 
+def connect_redis():
+    return redis
+
+
 def count_statistic(request):
+    rr = CustomRedis(host=settings.REDIS_HOST,
+                     port=settings.REDIS_PORT,
+                     decode_responses=True,
+                     db=request.session.get(settings.REDIS_DB_ID))
     half, player_id, action = get_any_data(request, 'half', 'player_id', 'action')
     key = f'{half}:{player_id}'
-    r.hincrby(key, action, 1)
-    new_value = r.hget(key, action)
-    print(r.hget(key, action))
+    rr.hincrby(key, action, 1)
+    new_value = rr.hget(key, action)
 
     return JsonResponse({'response': 'ok',
                          'value': new_value})
 
 
 def get_player_data(request):
+    # rr = CustomRedis(host='172.26.0.2', port=6379, decode_responses=True, db=request.session.get(settings.REDIS_DB_ID))
+    rr = CustomRedis(host=settings.REDIS_HOST,
+                     port=settings.REDIS_PORT,
+                     decode_responses=True,
+                     db=request.session.get(settings.REDIS_DB_ID))
     half, player_id = get_any_data(request, 'half', 'player_id')
     key = f'{half}:{player_id}'
 
-    res = r.hgetall(key)
+    res = rr.hgetall(key)
 
     response = {
         'status': 'ok',
