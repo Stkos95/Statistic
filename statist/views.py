@@ -4,6 +4,7 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.http import HttpResponse
 from django.views.generic.base import TemplateView
 from django.conf import settings
+from django.shortcuts import redirect, get_object_or_404
 
 from .models import Actions, Players, Game
 from .count import accumulate_statistic
@@ -59,15 +60,21 @@ class PlayersView(GroupRequiredMixin, TemplateView):
         else:
             return super().get_template_names()
 
+class InitView(GroupRequiredMixin, TemplateView):
+    template_name = 'statist/initial.html'
+
+    def get(self, request):
+        player_matches = request.user.game_set.filter(finished=False)
+        return self.render_to_response(context={'matches': player_matches})
+
+
 
 class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
     def get(self, request, *args, **kwargs):
-        new_redis_index = request.session.get(settings.REDIS_DB_ID, None)
-        if not new_redis_index:
-            new_redis_index = r.get_new_db_index()
-            request.session[settings.REDIS_DB_ID] = new_redis_index
+        game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
+        request.session[settings.REDIS_DB_ID] = game.bd_index
         players = Players.objects.all()
         action_by_category = {
             '1': [],
@@ -84,12 +91,40 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
             context={
                 'actions_by_category': action_by_category,
                 'players': players,
+                'game': game,
                 'actions': actions,
                 'statistic_type': 1})
 
 
-class InitView(GroupRequiredMixin, TemplateView):
-    pass
+    def post(self, request, *args, **kwargs):
+
+
+        game_name = request.POST.get('game-name')
+        game_date = request.POST.get('game_date')
+        game_url = request.POST.get('game_url')
+        print(game_name)
+        # new_redis_index = request.session.get(settings.REDIS_DB_ID, None)
+        new_redis_index = r.get_new_db_index()
+        game = Game(
+            name=game_name,
+            date=game_date,
+            user=request.user,
+            url=game_url,
+            bd_index=new_redis_index
+        )
+        game.save()
+        r.indexes.append(new_redis_index)
+        request.session[settings.REDIS_DB_ID] = new_redis_index
+        return redirect('statistic:count_existed', game.id)
+
+
+        # if not new_redis_index:
+        #     new_redis_index = r.get_new_db_index()
+        #     request.session[settings.REDIS_DB_ID] = new_redis_index
+
+
+
+
 
 
 def get_player(pl, players):
@@ -130,12 +165,13 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
     status = ('success', 'fail')
 
     def post(self, request, *args, **kwargs):
-        game_name = request.POST.get('game-name')
-        game_date = request.POST.get('game-date')
-        game = Game(name=game_name,
-                    slug=f'{game_name}_slug',
-                    date=game_date)
-        game.save()
+        # game_name = request.POST.get('game-name')
+        # game_date = request.POST.get('game-date')
+        # game = Game(name=game_name,
+        #             slug=f'{game_name}_slug',
+        #             date=game_date)
+
+
         result = dict(match={'match_name': game_name, 'match_date': game_date, }, players=list())
 
         players = Players.objects.all()
@@ -156,7 +192,6 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
             new_player = get_player_info(rr, player_obj, match_info)
             result['players'].append(new_player)
         for player in result['players']:
-            print(match_info.game.id)
             add_result_to_db.delay(player, match_info.game.id)
             d = accumulate_statistic(player['actions'])
             make_and_send_image.delay(game_name, game_date, player.get('name'), d)
@@ -201,6 +236,7 @@ def connect_redis():
 
 
 def count_statistic(request):
+    print(request.session.get(settings.REDIS_DB_ID))
     rr = CustomRedis(host=settings.REDIS_HOST,
                      port=settings.REDIS_PORT,
                      decode_responses=True,
@@ -234,4 +270,12 @@ def get_player_data(request):
 
 def celery_test(request):
     add.apply_async()
+    return JsonResponse({'response': 'ok'})
+
+
+def on_close(request):
+    data = json.load(request)
+    print(121212)
+    print(data.get('timing'))
+    request.session['video_stopped'] = data.get('timing')
     return JsonResponse({'response': 'ok'})

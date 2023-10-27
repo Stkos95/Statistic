@@ -63,11 +63,11 @@
     <label class="tgl-btn" data-tg-off="OFF" data-tg-on="ON" for="cb3-8"></label>
 </div>
 
-<form action="{% url 'statistic:result' %}" method="post">
-    <label for="game-name">Название матча:</label>
-    <input type="text" id="game-name" name="game-name">
-    <label for="game-date">Дата матча:</label>
-    <input type="date" id="game-date" name="game-date">
+<form action="{% url 'statistic:result' game.id %}" method="post">
+<!--    <label for="game-name">Название матча:</label>-->
+<!--    <input type="text" id="game-name" name="game-name">-->
+<!--    <label for="game-date">Дата матча:</label>-->
+<!--    <input type="date" id="game-date" name="game-date">-->
     {% csrf_token %}
 
 
@@ -93,14 +93,14 @@
                 {% endfor %}
 
             </tr>
-            
+
         </table>
     </div>
 
     <input type="hidden" name="statistic_type" value="{{ statistic_type }}">
-
+    <p>You have watched: {{ request.session.video_stopped }}</p>
     <input type="submit" value="Подтвердить">
-<!--    <input type="button" id="ajax-send" value="Подтвердить ajax">-->
+    <!--    <input type="button" id="ajax-send" value="Подтвердить ajax">-->
 </form>
 
 
@@ -112,6 +112,25 @@
 
 
 <script>
+    var tag = document.createElement('script');
+
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    // 3. This function creates an <iframe> (and YouTube player)
+    //    after the API code downloads.
+    var ytPlayer;
+
+    function onYouTubeIframeAPIReady() {
+        ytPlayer = new YT.Player('myiframe', {
+            height: '360',
+            width: '640',
+            videoId: 'M7lc1UVf-VE',
+        });
+    }
+
+
     let actions = document.querySelectorAll('input[type="number"]')
 
 
@@ -254,6 +273,15 @@
         })
     }
 
+    window.addEventListener('unload', (event) => {
+        const body = {
+            'timing': ytPlayer.getCurrentTime()
+        };
+        const url = "{% url 'statistic:on_close' %}";
+        sendAjax(url, body)
+    })
+
+
     document.addEventListener('keydown', (event) => {
 
         if (event.key === ' ') {
@@ -261,6 +289,7 @@
             let iframe = document.getElementById("myiframe")
             const data = iframe.getAttribute('data-status')
             let win = iframe.contentWindow;
+            console.log(ytPlayer)
             if (data === 'stop') {
                 command = 'playVideo'
                 iframe.setAttribute('data-status', 'play')
@@ -285,7 +314,7 @@
         const player_id = player.getAttribute('data-id')
 
 
-        const url = "{% url 'statistic:count' %}"
+        const url = "{% url 'statistic:count_process' %}"
         const body = {
             'player_id': player_id,
             'half': half,
