@@ -74,6 +74,8 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
+        # if not game.bd_index:
+        #     raise HttpException
         request.session[settings.REDIS_DB_ID] = game.bd_index
         players = Players.objects.all()
         action_by_category = {
@@ -86,7 +88,7 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
                 action_by_category['1'].append(i)
             else:
                 action_by_category['2'].append(i)
-
+        print(f'{self.__class__.__name__}-{r.indexes=}')
         return self.render_to_response(
             context={
                 'actions_by_category': action_by_category,
@@ -102,7 +104,6 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
         game_name = request.POST.get('game-name')
         game_date = request.POST.get('game_date')
         game_url = request.POST.get('game_url')
-        print(game_name)
         # new_redis_index = request.session.get(settings.REDIS_DB_ID, None)
         new_redis_index = r.get_new_db_index()
         game = Game(
@@ -114,6 +115,7 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
         )
         game.save()
         r.indexes.append(new_redis_index)
+        print(f'{self.__class__.__name__}-{r.indexes=}')
         request.session[settings.REDIS_DB_ID] = new_redis_index
         return redirect('statistic:count_existed', game.id)
 
@@ -164,15 +166,13 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statistic/count.html'
     status = ('success', 'fail')
 
-    def post(self, request, *args, **kwargs):
-        # game_name = request.POST.get('game-name')
-        # game_date = request.POST.get('game-date')
-        # game = Game(name=game_name,
-        #             slug=f'{game_name}_slug',
-        #             date=game_date)
+    def get(self, request, *args, **kwargs):
+        game_id = self.kwargs.get('game_id')
+        game = get_object_or_404(Game, pk=game_id)
 
 
-        result = dict(match={'match_name': game_name, 'match_date': game_date, }, players=list())
+
+        result = dict(match={'match_name': game.name, 'match_date': game.date, }, players=list())
 
         players = Players.objects.all()
         actions = Actions.objects.all()
@@ -194,10 +194,14 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
         for player in result['players']:
             add_result_to_db.delay(player, match_info.game.id)
             d = accumulate_statistic(player['actions'])
-            make_and_send_image.delay(game_name, game_date, player.get('name'), d)
-
+            make_and_send_image.delay(game.name, game.date, player.get('name'), d)
+            print(f'{self.__class__.__name__}-{r.indexes=}')
             rr.flushdb()
-            print(request.session[settings.REDIS_DB_ID])
+            r.indexes.remove(game.bd_index)
+            game.finished = True
+            # game.bd_index = None
+            game.save()
+            print(f'after remove: {self.__class__.__name__}-{r.indexes=}')
             del request.session[settings.REDIS_DB_ID]
         return JsonResponse({'status': 'hello'})
 
@@ -275,7 +279,5 @@ def celery_test(request):
 
 def on_close(request):
     data = json.load(request)
-    print(121212)
-    print(data.get('timing'))
     request.session['video_stopped'] = data.get('timing')
     return JsonResponse({'response': 'ok'})
