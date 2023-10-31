@@ -14,7 +14,6 @@ urlpatterns = [
     path('initial/', views.initial_players, name='initial_players'),
     path('count/', views.count_statistic, name='count_process'),
     path('player/', views.get_player_data, name='player_data'),
-    path('celery/', views.celery_test, name='celery'),
     path('close/', views.on_close, name='on_close'),
     path('check_players/', views.get_prepopulated_players, name='get_players')
 ]

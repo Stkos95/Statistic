@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 
@@ -29,13 +30,17 @@ class Game(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField()
     date = models.DateField(blank=True, null=True)
-    add = models.DateField(blank=True, null=True, auto_now_add=True)
-    update = models.DateField(auto_now=True)
+    add = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    update = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, blank=True, null=True)
     finished = models.BooleanField(default=False)
     watched = models.IntegerField(default=0)
     url = models.URLField(blank=True, null=True)
-    bd_index = models.IntegerField()
+    active = models.BooleanField(default=True)
+
+    def get_absolute_url(self):
+        return reverse('statistic:count_existed', args=[self.id])
+
 
 
     def save(self, *args, **kwargs):

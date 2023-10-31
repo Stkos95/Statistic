@@ -1,7 +1,7 @@
 from django.contrib.auth.models import Group
 from django.contrib.auth.mixins import AccessMixin
 from django.http import HttpResponseForbidden, JsonResponse
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpRequest
 from django.views.generic.base import TemplateView
 from django.conf import settings
 from django.shortcuts import redirect, get_object_or_404
@@ -64,7 +64,7 @@ class InitView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/initial.html'
 
     def get(self, request):
-        player_matches = request.user.game_set.filter(finished=False)
+        player_matches = request.user.game_set.filter(finished=False, active=True)
         return self.render_to_response(context={'matches': player_matches})
 
 
@@ -72,11 +72,8 @@ class InitView(GroupRequiredMixin, TemplateView):
 class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args, **kwargs):
         game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
-        # if not game.bd_index:
-        #     raise HttpException
-        request.session[settings.REDIS_DB_ID] = game.bd_index
         players = Players.objects.all()
         action_by_category = {
             '1': [],
@@ -88,7 +85,6 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
                 action_by_category['1'].append(i)
             else:
                 action_by_category['2'].append(i)
-        print(f'{self.__class__.__name__}-{r.indexes=}')
         return self.render_to_response(
             context={
                 'actions_by_category': action_by_category,
@@ -100,30 +96,18 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
 
-
         game_name = request.POST.get('game-name')
-        game_date = request.POST.get('game_date')
+        game_date = request.POST.get('game-date')
+        print(game_date)
         game_url = request.POST.get('game_url')
-        # new_redis_index = request.session.get(settings.REDIS_DB_ID, None)
-        new_redis_index = r.get_new_db_index()
         game = Game(
             name=game_name,
             date=game_date,
             user=request.user,
             url=game_url,
-            bd_index=new_redis_index
         )
         game.save()
-        r.indexes.append(new_redis_index)
-        print(f'{self.__class__.__name__}-{r.indexes=}')
-        request.session[settings.REDIS_DB_ID] = new_redis_index
         return redirect('statistic:count_existed', game.id)
-
-
-        # if not new_redis_index:
-        #     new_redis_index = r.get_new_db_index()
-        #     request.session[settings.REDIS_DB_ID] = new_redis_index
-
 
 
 
@@ -133,9 +117,9 @@ def get_player(pl, players):
     return [i for i in players if i.id == int(pl)][0]
 
 
-def collect_value(r: RedisCollection, key):
+def collect_value(key):
     half = key.split(':')[0]
-    data = r.get_hash_data_for_player(key)
+    data = r.hgetall(key)
     return half, data
 
 
@@ -145,14 +129,13 @@ def approriate_view(data, action):
     return value
 
 
-def get_player_info(r: RedisCollection, player_obj: Players, match_info: MatchInfo):
+def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
     new_player = {}
-
-    keys = r.get_keys_for_player(player_obj.id)
+    player_keys = [key for key in game_keys if f':{player_obj.id}:' in key]
     new_player['name'] = player_obj.name
     new_player['actions'] = dict()
-    for key in keys:
-        half, data = collect_value(r, key)
+    for key in player_keys:
+        half, data = collect_value(key)
         for action in match_info.actions:
 
             if action.name not in new_player['actions']:
@@ -169,9 +152,6 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         game_id = self.kwargs.get('game_id')
         game = get_object_or_404(Game, pk=game_id)
-
-
-
         result = dict(match={'match_name': game.name, 'match_date': game.date, }, players=list())
 
         players = Players.objects.all()
@@ -182,32 +162,22 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
             actions=actions
         )
 
-        rr = RedisCollection(host=settings.REDIS_HOST,
-                             port=settings.REDIS_PORT,
-                             decode_responses=True,
-                             db=request.session.get(settings.REDIS_DB_ID))
+        game_keys = r.keys(f'{game.id}:*')
+        players_id_list = [id_.split(':')[1] for id_ in game_keys]
 
-        players_ids_list = r.keys
+        for player_id in players_id_list:
+            player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
+            new_player = get_player_info(game_keys, player_obj, match_info)
+            result['players'].append(new_player)
 
-
-
-        # for player_id in rr.get_player_ids_list():
-        #     player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
-        #     new_player = get_player_info(rr, player_obj, match_info)
-        #     result['players'].append(new_player)
-        # for player in result['players']:
-        #     add_result_to_db.delay(player, match_info.game.id)
-        #     d = accumulate_statistic(player['actions'])
-        #     make_and_send_image.delay(game.name, game.date, player.get('name'), d)
-        #     print(f'{self.__class__.__name__}-{r.indexes=}')
-        #     rr.flushdb()
-        #     r.indexes.remove(game.bd_index)
-        #     game.finished = True
-        #     # game.bd_index = None
-        #     game.save()
-        #     print(f'after remove: {self.__class__.__name__}-{r.indexes=}')
-        #     del request.session[settings.REDIS_DB_ID]
-        # return JsonResponse({'status': 'hello'})
+        for player in result['players']:
+            add_result_to_db.delay(player, match_info.game.id)
+            d = accumulate_statistic(player['actions'])
+            make_and_send_image.delay(game.name, game.date, player.get('name'), d)
+            r.delete(*game_keys)
+            game.finished = True
+            game.save()
+        return JsonResponse({'status': 'hello'})
 
 
 def get_any_data(request, *args):
@@ -216,26 +186,18 @@ def get_any_data(request, *args):
 
 
 def initial_players(request):
-    rr = CustomRedis(host=settings.REDIS_HOST,
-                     port=settings.REDIS_PORT,
-                     decode_responses=True,
-                     db=request.session.get(settings.REDIS_DB_ID))
     data = json.load(request)
+    game_id = data.get('game_id')
+    keys = (f'{game_id}:{data["player_id"]}:1', f'{game_id}:{data["player_id"]}:2')
 
-    keys = (f'1:{data["player_id"]}', f'2:{data["player_id"]}')
     mapping = {action: 0 for action in data.get('actions')}
-    result = {}
     for half, key in enumerate(keys, start=1):
-        data_half = rr.hgetall(key)
+        data_half = r.hgetall(key)
         if data_half:
             data_exist = True
             return JsonResponse({'status': 'exist'})
-            # break
         else:
-            rr.hset(key, mapping=mapping)
-    # if data_exist:
-    #     return JsonResponse({'status': 'exist'})
-
+            r.hset(key, mapping=mapping)
     return JsonResponse({'status': 'ok'})
 
 
@@ -244,41 +206,27 @@ def connect_redis():
 
 
 def count_statistic(request):
-    print(request.session.get(settings.REDIS_DB_ID))
-    rr = CustomRedis(host=settings.REDIS_HOST,
-                     port=settings.REDIS_PORT,
-                     decode_responses=True,
-                     db=request.session.get(settings.REDIS_DB_ID))
-    half, player_id, action = get_any_data(request, 'half', 'player_id', 'action')
-    key = f'{half}:{player_id}'
-    rr.hincrby(key, action, 1)
-    new_value = rr.hget(key, action)
+    half, player_id, action, game_id = get_any_data(request, 'half', 'player_id', 'action', 'game_id')
+    key = f'{game_id}:{player_id}:{half}'
+    r.hincrby(key, action, 1)
+    new_value = r.hget(key, action)
 
     return JsonResponse({'response': 'ok',
                          'value': new_value})
 
 
 def get_player_data(request):
-    # rr = CustomRedis(host='172.26.0.2', port=6379, decode_responses=True, db=request.session.get(settings.REDIS_DB_ID))
-    rr = CustomRedis(host=settings.REDIS_HOST,
-                     port=settings.REDIS_PORT,
-                     decode_responses=True,
-                     db=request.session.get(settings.REDIS_DB_ID))
-    half, player_id = get_any_data(request, 'half', 'player_id')
-    key = f'{half}:{player_id}'
 
-    res = rr.hgetall(key)
+    half, player_id, game_id = get_any_data(request, 'half', 'player_id', 'game_id')
+    key = f'{game_id}:{player_id}:{half}'
+
+    res = r.hgetall(key)
 
     response = {
         'status': 'ok',
         'data': res
     }
     return JsonResponse(response)
-
-
-def celery_test(request):
-    add.apply_async()
-    return JsonResponse({'response': 'ok'})
 
 
 def on_close(request):
@@ -289,19 +237,7 @@ def on_close(request):
 
 def get_prepopulated_players(request):
     data = json.load(request)
-    db_index = data.get('db_index', None)
-    rr = CustomRedis(host=settings.REDIS_HOST,
-                     port=settings.REDIS_PORT,
-                     decode_responses=True,
-                     db=int(db_index))
-    players = rr.keys()
-    d = set(map(lambda x: x.split(':')[1], players))
-
-
-
-
-
-
-
+    game_id = data.get('game_id', None)
+    d = set(map(lambda x: x.split(':')[1], r.keys(f'{game_id}:*')))
     return JsonResponse({'status': 'ok',
                          'players': [*d]})

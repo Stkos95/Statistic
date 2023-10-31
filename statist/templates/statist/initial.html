@@ -26,6 +26,7 @@
                 <h3>У вас есть незаконченные матчи:</h3>
                 {% for match in matches %}
                     <p>{{match.id}}</p>
+                    <a href="{{ match.get_absolute_url }}">Продолжить</a>
                 {% endfor %}
             </div>
             {% endif %}
