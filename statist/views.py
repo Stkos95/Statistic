@@ -187,23 +187,27 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
                              decode_responses=True,
                              db=request.session.get(settings.REDIS_DB_ID))
 
-        for player_id in rr.get_player_ids_list():
-            player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
-            new_player = get_player_info(rr, player_obj, match_info)
-            result['players'].append(new_player)
-        for player in result['players']:
-            add_result_to_db.delay(player, match_info.game.id)
-            d = accumulate_statistic(player['actions'])
-            make_and_send_image.delay(game.name, game.date, player.get('name'), d)
-            print(f'{self.__class__.__name__}-{r.indexes=}')
-            rr.flushdb()
-            r.indexes.remove(game.bd_index)
-            game.finished = True
-            # game.bd_index = None
-            game.save()
-            print(f'after remove: {self.__class__.__name__}-{r.indexes=}')
-            del request.session[settings.REDIS_DB_ID]
-        return JsonResponse({'status': 'hello'})
+        players_ids_list = r.keys
+
+
+
+        # for player_id in rr.get_player_ids_list():
+        #     player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
+        #     new_player = get_player_info(rr, player_obj, match_info)
+        #     result['players'].append(new_player)
+        # for player in result['players']:
+        #     add_result_to_db.delay(player, match_info.game.id)
+        #     d = accumulate_statistic(player['actions'])
+        #     make_and_send_image.delay(game.name, game.date, player.get('name'), d)
+        #     print(f'{self.__class__.__name__}-{r.indexes=}')
+        #     rr.flushdb()
+        #     r.indexes.remove(game.bd_index)
+        #     game.finished = True
+        #     # game.bd_index = None
+        #     game.save()
+        #     print(f'after remove: {self.__class__.__name__}-{r.indexes=}')
+        #     del request.session[settings.REDIS_DB_ID]
+        # return JsonResponse({'status': 'hello'})
 
 
 def get_any_data(request, *args):
@@ -281,3 +285,23 @@ def on_close(request):
     data = json.load(request)
     request.session['video_stopped'] = data.get('timing')
     return JsonResponse({'response': 'ok'})
+
+
+def get_prepopulated_players(request):
+    data = json.load(request)
+    db_index = data.get('db_index', None)
+    rr = CustomRedis(host=settings.REDIS_HOST,
+                     port=settings.REDIS_PORT,
+                     decode_responses=True,
+                     db=int(db_index))
+    players = rr.keys()
+    d = set(map(lambda x: x.split(':')[1], players))
+
+
+
+
+
+
+
+    return JsonResponse({'status': 'ok',
+                         'players': [*d]})

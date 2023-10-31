@@ -56,36 +56,36 @@
 </div>
 
 
-    {% csrf_token %}
+{% csrf_token %}
 
 
-    <div id="atack-actions">
-        <table>
+<div id="atack-actions">
+    <table>
 
-            <tr>
-                {% for act in actions_by_category.1 %}
-                <th class="head">
-                    {{ act }}
-                </th>
-                {% endfor %}
-            </tr>
+        <tr>
+            {% for act in actions_by_category.1 %}
+            <th class="head">
+                {{ act }}
+            </th>
+            {% endfor %}
+        </tr>
 
 
-            <tr>
-                {% for act in actions_by_category.1 %}
-                <td class="field"><input data-half="1" class="success" name="{{ act.slug }}-success" type="number"
-                                         value="0">
-                    <input class="fail" name="{{ act.slug }}-fail" type="number" value="0">
-                </td>
-                {% endfor %}
+        <tr>
+            {% for act in actions_by_category.1 %}
+            <td class="field"><input data-half="1" class="success" name="{{ act.slug }}-success" type="number"
+                                     value="0">
+                <input class="fail" name="{{ act.slug }}-fail" type="number" value="0">
+            </td>
+            {% endfor %}
 
-            </tr>
+        </tr>
 
-        </table>
-    </div>
+    </table>
+</div>
 
-    <input type="hidden" name="statistic_type" value="{{ statistic_type }}">
-    <p>You have watched: {{ request.session.video_stopped }}</p>
+<input type="hidden" name="statistic_type" value="{{ statistic_type }}">
+<p>You have watched: {{ request.session.video_stopped }}</p>
 
 <form action="{% url 'statistic:result' game.id %}" method="get">
     <input type="submit" value="Подтвердить">
@@ -101,7 +101,8 @@
 
 
 <script>
-<!--    ---------------------------------- YT script ----------------- -->
+
+    // ------------------------------------YT script-----------------
     var tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -116,11 +117,62 @@
             videoId: 'M7lc1UVf-VE',
         });
     }
-<!--    ---------------------------------- window.onload  ----------------- -->
-    function prepopulatedPlayerData() {
-        console.log({{ game.bd_index }})
-        console.log(1212)
+
+    <!--    ---------------------------------- window.onload  ----------------- -->
+
+    <!--    ---------------------------------- check players in db, if i have already added them, get list of players with values  ----------------- -->
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
+    const url = '{% url "statistic:get_players" %}';
+    const body = {
+        'db_index': '{{ game.bd_index }}',
+        'X-CSRFToken': csrftoken,
     }
+    sendAjax(url, body).then(response => response.json()).then(data => {
+        const players = data['players'];
+        const PlayersDiv = document.querySelector('#players');
+        const select = document.querySelector('#player-select');
+                for (let opt of select.options) {
+                    if (players.includes(opt.value.toString())) {
+                        let div = document.createElement('div');
+                        let playerSpan = document.createElement('span')
+                        let spanText = document.createTextNode(opt.text)
+                        playerSpan.appendChild(spanText)
+                        div.setAttribute('class', 'player');
+                        div.setAttribute('data-id', opt.value)
+                        choosePlayerToCount(div)
+                        div.appendChild(playerSpan)
+                        PlayersDiv.appendChild(div)
+                        console.log('OK')
+
+                    }
+
+                        }})
+        // for (let pl of players) {
+        //     let div = document.createElement('div');
+        //     let playerSpan = document.createElement('span')
+        //     let spanText = document.createTextNode(`${playerName}`)
+        //     playerSpan.appendChild(spanText)
+        //     div.setAttribute('class', 'player');
+        //     div.setAttribute('data-id', playerId)
+        // }
+
+        // const playerName = select.options[select.selectedIndex].text;
+
+
+        // for (let player of players) {
+        //     console.log(player)
+        // }
+
+
+
+    function prepopulatedPlayerData(data) {
+        if (data) {
+
+        }
+
+
+    }
+
     prepopulatedPlayerData()
     window.addEventListener('load', prepopulatedPlayerData)
 
@@ -160,7 +212,7 @@
         playerButton.click()
     }
 
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
+
     // <!--    -------------------- add players to count statistic ------------------- -->
     let count = 0
     let players = document.querySelector('#players');
@@ -169,6 +221,7 @@
 
         let currentButton = event.target;
         const select = currentButton.previousSibling;
+
         const playerId = select.options[select.selectedIndex].value;
         const playerName = select.options[select.selectedIndex].text;
         let div = document.createElement('div');
@@ -262,7 +315,10 @@
         element.addEventListener('click', (event) => {
             getJsonPlayerData(element)
             let currentSelectedPlayer = document.querySelector('.player-selected');
-            currentSelectedPlayer.classList.remove('player-selected')
+            if (currentSelectedPlayer) {
+                currentSelectedPlayer.classList.remove('player-selected')
+            }
+
             element.classList.add('player-selected')
         })
     }
