@@ -1,11 +1,11 @@
 from django.contrib.auth.models import Group
 from django.contrib.auth.mixins import AccessMixin
+from django.contrib.auth.views import PasswordResetView
 from django.http import HttpResponseForbidden, JsonResponse
 from django.http import HttpResponse, HttpRequest
 from django.views.generic.base import TemplateView
 from django.conf import settings
 from django.shortcuts import redirect, get_object_or_404
-
 from .models import Actions, Players, Game
 from .count import accumulate_statistic
 from .utils.collect_data import RedisCollection, CustomRedis
@@ -73,6 +73,7 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
     def get(self, request: HttpRequest, *args, **kwargs):
+
         game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
         players = Players.objects.all()
         action_by_category = {
@@ -118,7 +119,7 @@ def get_player(pl, players):
 
 
 def collect_value(key):
-    half = key.split(':')[0]
+    half = key.split(':')[2]
     data = r.hgetall(key)
     return half, data
 
@@ -163,7 +164,7 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
         )
 
         game_keys = r.keys(f'{game.id}:*')
-        players_id_list = [id_.split(':')[1] for id_ in game_keys]
+        players_id_list = set([id_.split(':')[1] for id_ in game_keys])
 
         for player_id in players_id_list:
             player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
@@ -171,8 +172,10 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
             result['players'].append(new_player)
 
         for player in result['players']:
+
             add_result_to_db.delay(player, match_info.game.id)
             d = accumulate_statistic(player['actions'])
+
             make_and_send_image.delay(game.name, game.date, player.get('name'), d)
             r.delete(*game_keys)
             game.finished = True
@@ -241,3 +244,9 @@ def get_prepopulated_players(request):
     d = set(map(lambda x: x.split(':')[1], r.keys(f'{game_id}:*')))
     return JsonResponse({'status': 'ok',
                          'players': [*d]})
+
+def delete_game(request, game_id):
+    game = get_object_or_404(Game, pk=game_id)
+    game.active = False
+
+

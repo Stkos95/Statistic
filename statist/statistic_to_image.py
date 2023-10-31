@@ -69,7 +69,7 @@ class OurTeamImage(TeamStatisticImage):
         y += 66
 
         date_box_size = self.put_text(coords=(x, y),
-                                      data=match_date,
+                                      data=str(match_date),
                                       fill='black',
                                       path=f"./statist/Inter_font/static/Inter-Bold.ttf",
                                       size=30
