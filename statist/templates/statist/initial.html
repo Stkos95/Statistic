@@ -24,10 +24,14 @@
             {% if matches %}
             <div class="unfinished-matches">
                 <h3>У вас есть незаконченные матчи:</h3>
+                    <ul>
                 {% for match in matches %}
-                    <p>{{match.id}}</p>
-                    <a href="{{ match.get_absolute_url }}">Продолжить</a>
+                    <li>{{match.id}}
+                        <a href="{{ match.get_absolute_url }}">Продолжить</a></li>
+
                 {% endfor %}
+                    </ul>
+
             </div>
             {% endif %}
         <input type="submit" value="Send">
