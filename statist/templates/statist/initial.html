@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block content %}
+
+
+
+<script src="{% static 'js/index.js' %}" defer></script>
+
+
+ <h1>Укажите следующую информацию:</h1>
+        <hr>
+
+        <form method="post" action="{% url 'statistic:count' %}" autocomplete="off">
+            {% csrf_token %}
+
+            <div class="game-info">
+                <label for="game-name">Название матча:</label>
+                <input type="text" id="game-name" value="Название матча" name="game-name">
+                <label for="game-date">Дата матча:</label>
+                <input type="date" id="game-date" name="game-date">
+            </div>
+            {% if matches %}
+            <div class="unfinished-matches">
+                <h3>У вас есть незаконченные матчи:</h3>
+                    <ul id="unfinished-games">
+                {% for match in matches %}
+                    <li>{{match.id}}<br>
+                        <a href="{{ match.get_absolute_url }}">Продолжить</a></li>
+
+                {% endfor %}
+                    </ul>
+
+            </div>
+            {% endif %}
+        <input type="submit" value="Send">
+        </form>
+
+
+
+{% endblock %}

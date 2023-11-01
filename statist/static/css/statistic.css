@@ -1,0 +1,8 @@
+div span:last-child {
+    color: red;
+    /*display: none;*/
+}
+
+span {
+    cursor: pointer;
+}

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+
+
+{% block content %}
+
+<h1>Hello</h1>
+{% for i in task_list %}
+<p>{{ i.name }}</p>
+{% endfor %}
+
+<hr>
+{% for i in date_list %}
+<p>{{ i }}</p>
+{% endfor %}
+
+
+{% endblock %}

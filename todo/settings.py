@@ -32,12 +32,16 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'tasks.apps.TasksConfig',
+    'statist.apps.StatistConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'crispy_forms',
+"crispy_bootstrap4"
 ]
 
 MIDDLEWARE = [
@@ -51,6 +55,9 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'todo.urls'
+
+AUTHENTICATION_BACKENDS = ['tasks.authentication.EmailBackend',
+                           'django.contrib.auth.backends.ModelBackend']
 
 TEMPLATES = [
     {
@@ -74,12 +81,25 @@ WSGI_APPLICATION = 'todo.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "postgres1",
+        "USER": "kos",
+        "PASSWORD": "123",
+        "HOST": "172.17.0.2",
+        "PORT": "5432",
     }
 }
+
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
@@ -106,7 +126,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
+CELERY_TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -122,3 +143,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+CRISPY_TEMPLATE_PACK = "bootstrap4"
+
+
+REDIS_HOST = '172.17.0.4'
+REDIS_PORT = 6379
+
+CELERY_BROKER_URL = 'localhost:5672'

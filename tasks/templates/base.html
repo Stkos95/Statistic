@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 {% load static %}
+{% load my_tags %}
 <html>
     <head>
         <meta charset="utf-8" />
         <title>{% block title %}My ToDoApp{% endblock %}</title>
         <link href="{% static 'css/base.css' %}" rel="stylesheet">
+<!--        <script src="../static/js/index.js"></script>-->
     </head>
     <body>
     <div id="header">
@@ -17,10 +19,25 @@
                     <li {% if section == "schedule" %}class="selected"{% endif %}'>
                         <a href="{% url 'schedule' %}">Schedule</a>
                     </li>
+                    {% if user|is_in_group:'Statistic' or user.is_staff %}
+                        <li {% if section == "about" %}class="selected"{% endif %}'>
+                        <a href="{% url 'about' %}">Statistic</a>
+                    {% endif %}
+                    </li>
                     <li {% if section == "about" %}class="selected"{% endif %}'>
                         <a href="{% url 'about' %}">About</a>
                     </li>
+                {% if request.user.is_authenticated %}
+                <li class="last">{{ user.username }} | <a href="{% url 'logout' %}">Выйти</a></li>
+                {% else %}
+                    <li class="last"><a href="{% url 'registration' %}">Регистрация</a> | <a href="{% url 'login' %}">Войти</a></li>
+                {% endif %}
+
             </ul>
+
+
+
+
     </div>
 {% block content %}
 {% endblock %}

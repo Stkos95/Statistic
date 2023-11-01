@@ -1,16 +1,23 @@
 {% extends "base.html" %}
 {% load my_tags %}
 {% block content %}
+
+{% if not user.is_authenticated %}
+    <h1>Вы не авторизованы!</h1>
+    <p>Пожалуйста, войдите на сайт, чтобы увидеть свои задачи и начать работу. <a href="{% url 'login' %}">Войти</a></p>
+    <p>Если у вас нет аккаунта: <a href="{% url 'registration' %}">Зарегистрироваться</a></p>
+{% else %}
+
 <div id="time">
     <ul class="dates_list">
         <li>
-            <a href="{% url 'schedule' %}">Все</a>
+            <a href="{% url 'schedule_category' category_slug %}">Все</a>
         </li>
-        {% get_dates as dates %}
-        {% for task in dates %}
+<!--        {% get_dates as dates %}-->
+        {% for d in date_list %}
             <li>
-                <a href='{% url "schedule_time" task.deadline|date:"d-m-Y" %}'>
-                    {{ task.deadline|date:"j E" }}
+                <a href="{% url 'schedule_time' category_slug d|date:'Y-m-d' %} ">
+                    {{ d|date:"Y-m-d" }}
                 </a>
             </li>
 
@@ -25,7 +32,7 @@
         {% if not category_slug %}
             Все
         {% else %}
-        <a href="{% url 'schedule' %}">Все</a>
+        <a href="{% url 'schedule_category' 'all' %}">Все</a>
         {% endif %}
     </li>
     <li>
@@ -64,5 +71,7 @@
     {% endfor %}
     </ul>
 
+<a id="create_task" href="{% url 'task_create' category_slug %}">Создать новую задачу в категории:{{ category_slug }}</a>
 
+{% endif %}
 {% endblock %}
