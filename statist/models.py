@@ -41,6 +41,11 @@ class Game(models.Model):
     def get_absolute_url(self):
         return reverse('statistic:count_existed', args=[self.id])
 
+    class Meta:
+        permissions = [
+            ('can_add_new_game', 'can create and add new games')
+        ]
+
 
 
     def save(self, *args, **kwargs):

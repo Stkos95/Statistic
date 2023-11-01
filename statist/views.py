@@ -1,5 +1,5 @@
-from django.contrib.auth.models import Group
-from django.contrib.auth.mixins import AccessMixin
+from django.contrib.auth.models import Group, User
+from django.contrib.auth.mixins import AccessMixin, LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.views import PasswordResetView
 from django.http import HttpResponseForbidden, JsonResponse
 from django.http import HttpResponse, HttpRequest
@@ -28,42 +28,30 @@ class MatchInfo:
 
 class GroupRequiredMixin(AccessMixin):
     permission_denied_message = 'You have no permission for that section...'
-    group_name = ''
+    group_name = 'Statistic'
+    group = None
 
     def get_group(self):
         return self.group_name
 
-    def check_group(self):
+    def dispatch(self, request, *args, **kwargs):
         try:
-            gr = Group.objects.get(name=self.get_group())
-        except Group.DoesNotExists:
-            return HttpResponseForbidden('Not allowed!')
+            self.group = Group.objects.get(name=self.get_group())
+        except Group.DoesNotExist:
+            return self.handle_no_permission()
 
-        if gr in self.request.user.groups.all():
-            return True
-        return False
+        if not request.user.is_authenticated or self.group not in request.user.groups.all():
+            return self.handle_no_permission()
+
+        return super().dispatch(request, *args, **kwargs)
 
 
-class PlayersView(GroupRequiredMixin, TemplateView):
-    group_name = 'Statistic'
+
+class InitView(PermissionRequiredMixin, TemplateView):
     template_name = 'statist/initial.html'
-
+    permission_required = 'statist.can_add_new_game'
     def get(self, request, *args, **kwargs):
-        allow = self.check_group()
-        if not allow and not self.request.user.is_staff:
-            return HttpResponseForbidden(self.get_permission_denied_message())
-        return super().get(request, *args, **kwargs)
-
-    def get_template_names(self):
-        if self.request.method == 'POST':
-            return ['statist/statistic.html']
-        else:
-            return super().get_template_names()
-
-class InitView(GroupRequiredMixin, TemplateView):
-    template_name = 'statist/initial.html'
-
-    def get(self, request):
+        print(request.user.has_perm('statist.can_add_new_game'))
         player_matches = request.user.game_set.filter(finished=False, active=True)
         return self.render_to_response(context={'matches': player_matches})
 
@@ -73,7 +61,6 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
 
     def get(self, request: HttpRequest, *args, **kwargs):
-
         game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
         players = Players.objects.all()
         action_by_category = {
@@ -204,10 +191,6 @@ def initial_players(request):
     return JsonResponse({'status': 'ok'})
 
 
-def connect_redis():
-    return redis
-
-
 def count_statistic(request):
     half, player_id, action, game_id = get_any_data(request, 'half', 'player_id', 'action', 'game_id')
     key = f'{game_id}:{player_id}:{half}'
@@ -219,12 +202,9 @@ def count_statistic(request):
 
 
 def get_player_data(request):
-
     half, player_id, game_id = get_any_data(request, 'half', 'player_id', 'game_id')
     key = f'{game_id}:{player_id}:{half}'
-
     res = r.hgetall(key)
-
     response = {
         'status': 'ok',
         'data': res
