@@ -1,21 +1,20 @@
-from django.contrib.auth.models import Group, User
-from django.contrib.auth.mixins import AccessMixin, LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.views import PasswordResetView
-from django.http import HttpResponseForbidden, JsonResponse
-from django.http import HttpResponse, HttpRequest
-from django.views.generic.base import TemplateView
-from django.conf import settings
-from django.shortcuts import redirect, get_object_or_404
-from .models import Actions, Players, Game
-from .count import accumulate_statistic
-from .utils.collect_data import RedisCollection, CustomRedis
-from .tasks import make_and_send_image, add_result_to_db
-
 from dataclasses import dataclass
 import redis
 import json
 
-r = CustomRedis(host='172.26.0.2', port=6379, decode_responses=True)
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.http import JsonResponse, HttpRequest
+from django.views.generic.base import TemplateView
+from django.conf import settings
+from django.shortcuts import redirect, get_object_or_404
+
+from .models import Actions, Players, Game
+from .count import accumulate_statistic
+from .tasks import make_and_send_image, add_result_to_db
+
+
+
+r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, decode_responses=True)
 seldom_actions = ['Обводка', 'Перехват', 'Отбор']
 
 
@@ -26,22 +25,19 @@ class MatchInfo:
     actions: list
 
 
-
-
-
-
 class InitView(PermissionRequiredMixin, TemplateView):
     template_name = 'statist/initial.html'
     permission_required = 'statist.can_add_new_game'
+
     def get(self, request, *args, **kwargs):
         print(request.user.has_perm('statist.can_add_new_game'))
         player_matches = request.user.game_set.filter(finished=False, active=True)
         return self.render_to_response(context={'matches': player_matches})
 
 
-
-class CountStatisticView(GroupRequiredMixin, TemplateView):
+class CountStatisticView(PermissionRequiredMixin, TemplateView):
     template_name = 'statist/statistic.html'
+    permission_required = 'statist.can_add_new_game'
 
     def get(self, request: HttpRequest, *args, **kwargs):
         game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
@@ -64,7 +60,6 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
                 'actions': actions,
                 'statistic_type': 1})
 
-
     def post(self, request, *args, **kwargs):
 
         game_name = request.POST.get('game-name')
@@ -79,9 +74,6 @@ class CountStatisticView(GroupRequiredMixin, TemplateView):
         )
         game.save()
         return redirect('statistic:count_existed', game.id)
-
-
-
 
 
 def get_player(pl, players):
@@ -116,7 +108,8 @@ def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
     return new_player
 
 
-class ResultStatisticView(GroupRequiredMixin, TemplateView):
+class ResultStatisticView(PermissionRequiredMixin, TemplateView):
+    permission_required = 'statist.can_add_new_game'
     template_name = 'statistic/count.html'
     status = ('success', 'fail')
 
@@ -142,7 +135,6 @@ class ResultStatisticView(GroupRequiredMixin, TemplateView):
             result['players'].append(new_player)
 
         for player in result['players']:
-
             add_result_to_db.delay(player, match_info.game.id)
             d = accumulate_statistic(player['actions'])
 
@@ -167,7 +159,6 @@ def initial_players(request):
     for half, key in enumerate(keys, start=1):
         data_half = r.hgetall(key)
         if data_half:
-            data_exist = True
             return JsonResponse({'status': 'exist'})
         else:
             r.hset(key, mapping=mapping)
@@ -208,8 +199,7 @@ def get_prepopulated_players(request):
     return JsonResponse({'status': 'ok',
                          'players': [*d]})
 
+
 def delete_game(request, game_id):
     game = get_object_or_404(Game, pk=game_id)
     game.active = False
-
-

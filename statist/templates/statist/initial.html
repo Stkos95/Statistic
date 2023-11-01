@@ -24,9 +24,9 @@
             {% if matches %}
             <div class="unfinished-matches">
                 <h3>У вас есть незаконченные матчи:</h3>
-                    <ul>
+                    <ul id="unfinished-games">
                 {% for match in matches %}
-                    <li>{{match.id}}
+                    <li>{{match.id}}<br>
                         <a href="{{ match.get_absolute_url }}">Продолжить</a></li>
 
                 {% endfor %}

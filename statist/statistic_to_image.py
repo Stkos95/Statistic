@@ -61,7 +61,7 @@ class OurTeamImage(TeamStatisticImage):
         fio_box_size = self.put_text(coords=(x, y),
                                      data=player_name,
                                      fill='black',
-                                     path=f"./statist/Inter_font/static/Inter-Bold.ttf",
+                                     path=f"./statist/static/fonts/Inter_font/static/Inter-Bold.ttf",
                                      size=40,
                                      anchor='lb'
                                      )
@@ -71,7 +71,7 @@ class OurTeamImage(TeamStatisticImage):
         date_box_size = self.put_text(coords=(x, y),
                                       data=str(match_date),
                                       fill='black',
-                                      path=f"./statist/Inter_font/static/Inter-Bold.ttf",
+                                      path=f"./statist/static/fonts/Inter_font/static/Inter-Bold.ttf",
                                       size=30
                                       )
         # self.y += date_box_size[3] + 10
@@ -80,7 +80,7 @@ class OurTeamImage(TeamStatisticImage):
         match_name_box_size = self.put_text(coords=(x, y),
                                             data=match_name,
                                             fill='black',
-                                            path=f"./statist/Inter_font/static/Inter-Bold.ttf",
+                                            path=f"./statist/static/fonts/Inter_font/Inter-Bold.ttf",
                                             size=30
                                             )
         y = 250
@@ -88,14 +88,14 @@ class OurTeamImage(TeamStatisticImage):
         self.put_text(coords=(x, y),
                       data="1 Тайм",
                       fill='black',
-                      path=f"./statist/Inter_font/static/Inter-Bold.ttf",
+                      path=f"./statist/static/fonts/Inter_font/static/Inter-Bold.ttf",
                       size=30
                       )
         x = self.image.width / 2 + self.image.width / 4
         self.put_text(coords=(x, y),
                       data="2 Тайм",
                       fill='black',
-                      path=f"./statist/Inter_font/static/Inter-Bold.ttf",
+                      path=f"./statist/static/fonts/Inter_font/static/Inter-Bold.ttf",
                       size=30
                       )
 
@@ -107,7 +107,7 @@ class OurTeamImage(TeamStatisticImage):
             self.put_text(coords=(x, y),
                           data=action,
                           fill='black',
-                          path=f"./statist/Inter_font/static/Inter-Black.ttf",
+                          path=f"./statist/static/fonts/Inter_font/static/Inter-Black.ttf",
                           size=30
                           )
 
@@ -116,7 +116,7 @@ class OurTeamImage(TeamStatisticImage):
             self.put_text(coords=(x, y),
                           data=f'{halfs["1"]}',
                           fill='black',
-                          path=f"./statist/Inter_font/static/Inter-Medium.ttf",
+                          path=f"./statist/static/fonts/Inter_font/static/Inter-Medium.ttf",
                           size=30
                           )
             x = self.image.width / 2 + self.image.width / 4
@@ -124,7 +124,7 @@ class OurTeamImage(TeamStatisticImage):
             self.put_text(coords=(x, y),
                           data=f'{halfs["2"]}',
                           fill='black',
-                          path=f"./statist/Inter_font/static/Inter-Regular.ttf",
+                          path=f"./statist/static/fonts/Inter_font/static/Inter-Regular.ttf",
                           size=30
                           )
             y += 100
