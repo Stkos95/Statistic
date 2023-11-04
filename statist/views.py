@@ -10,6 +10,7 @@ from django.shortcuts import redirect, get_object_or_404
 
 from .models import Actions, Players, Game
 from .count import accumulate_statistic
+from .statistic_to_image import OurTeamImage
 from .tasks import make_and_send_image, add_result_to_db
 
 
@@ -108,6 +109,8 @@ def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
     return new_player
 
 
+from .tasks import test_bites
+
 class ResultStatisticView(PermissionRequiredMixin, TemplateView):
     permission_required = 'statist.can_add_new_game'
     template_name = 'statistic/count.html'
@@ -137,11 +140,17 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
         for player in result['players']:
             add_result_to_db.delay(player, match_info.game.id)
             d = accumulate_statistic(player['actions'])
+            print('1212')
+            z = OurTeamImage()
+            z.make_header('1','2','3')
+            tt = z.save_to_bytes()
 
-            make_and_send_image.delay(game.name, game.date, player.get('name'), d)
-            r.delete(*game_keys)
-            game.finished = True
-            game.save()
+            test_bites.delay(tt.getvalue())
+
+            # make_and_send_image.delay(game.name, game.date, player.get('name'), match_info)
+            # r.delete(*game_keys)
+            # game.finished = True
+            # game.save()
         return JsonResponse({'status': 'hello'})
 
 

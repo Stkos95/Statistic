@@ -1,9 +1,6 @@
 venv/
 */__pycache__/
 */migrations/
-
-
-
 test.*
 __pycache__/
 .env
