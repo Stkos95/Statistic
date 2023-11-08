@@ -1,5 +1,5 @@
 FROM python:3.11-slim
-# get BOT_NAME from .env !
+# get BOT_NAME from .env.tgbot !
 ENV BOT_NAME=mybotname
 
 WORKDIR /usr/src/app/${BOT_NAME}

@@ -3,7 +3,7 @@ venv/
 */migrations/
 test.*
 __pycache__/
-.env
+../.env
 db.sqlite3
 dump/
 

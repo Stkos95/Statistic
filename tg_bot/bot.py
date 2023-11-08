@@ -86,7 +86,7 @@ def get_storage(config):
 async def main():
     setup_logging()
 
-    config = load_config(".env")
+    config = load_config(".env.tgbot")
     storage = get_storage(config)
 
     await bot.send_message(336112599, 'hello')
