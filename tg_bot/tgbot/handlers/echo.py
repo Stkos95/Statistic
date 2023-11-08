@@ -4,12 +4,15 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.markdown import hcode
 import os
 from io import BytesIO
+from celery_app import test1
+
 echo_router = Router()
 
 
 @echo_router.message(F.text, StateFilter(None))
 async def bot_echo(message: types.Message):
     path = os.getcwd()
+    test1.delay(message.text)
     await message.answer('works)))')
 
 #
