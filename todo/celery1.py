@@ -7,18 +7,10 @@ import asyncio
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'todo.settings')
 
-app = Celery('todo', result_backend = 'rpc://'
-)
-# app.config_from_object('django.conf:settings', namespace='CELERY')
+app = Celery('todo', result_backend = 'rpc://')
+app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 
 
 # task_routes = {'feed.tasks.import_feed': {'queue': 'feeds'}}
-
-# app.conf.update({
-#
-#     'task_routes': {
-#         'fetch_bitcoin_price_index': {'queue': 'feeds'},
-#         'calculate_moving_average': {'queue': 'filters'}
-#     }})

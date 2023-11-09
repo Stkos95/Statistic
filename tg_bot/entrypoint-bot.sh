@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-python -m bot
+python ./tg_bot/bot.py
 
 
 exec "$@"
