@@ -109,7 +109,7 @@ def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
     return new_player
 
 
-from .tasks import test_bites
+
 
 class ResultStatisticView(PermissionRequiredMixin, TemplateView):
     permission_required = 'statist.can_add_new_game'
