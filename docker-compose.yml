@@ -5,17 +5,21 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    entrypoint: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-#    volumes:
-#      - web_todo1:/vol/
+#    entrypoint: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    entrypoint: ./entry-point.sh
+    volumes:
+      - ./static:/app/static
     ports:
       - 8000:8000
     networks:
       - rabbitmq
       - postgres
       - redis
+      - nginx
     env_file:
       - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: todo.settings.prod
     depends_on:
       - redis
       - rabbitmq
@@ -36,7 +40,7 @@ services:
     depends_on:
       - rabbitmq
     volumes:
-      - web_todo:/app/
+      - web_todo1:/app/
 #
   tg-bot-worker:
     container_name: tg-bot-worker
@@ -51,7 +55,7 @@ services:
     depends_on:
       - rabbitmq
     volumes:
-      - web_todo:/app/
+      - web_todo1:/app/
 
   postgres:
     container_name: postgres
@@ -84,6 +88,16 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
 
+  nginx:
+    container_name: nginx
+    build: nginx/
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ./static:/static
+    networks:
+      - nginx
 
 networks:
   redis:
@@ -91,6 +105,8 @@ networks:
   postgres:
     driver: bridge
   rabbitmq:
+    driver: bridge
+  nginx:
     driver: bridge
 
 

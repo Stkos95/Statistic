@@ -16,6 +16,7 @@ from .tasks import make_and_send_image, add_result_to_db
 
 
 r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, decode_responses=True)
+# r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, password=settings.REDIS_PASSWORD, decode_responses=True)
 seldom_actions = ['Обводка', 'Перехват', 'Отбор']
 
 
@@ -140,17 +141,17 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
         for player in result['players']:
             add_result_to_db.delay(player, match_info.game.id)
             d = accumulate_statistic(player['actions'])
-            print('1212')
-            z = OurTeamImage()
-            z.make_header('1','2','3')
-            tt = z.save_to_bytes()
+            # print('1212')
+            # z = OurTeamImage()
+            # z.make_header('1','2','3')
+            # tt = z.save_to_bytes()
 
-            test_bites.delay(tt.getvalue())
+            # test_bites.delay(tt.getvalue())
 
-            # make_and_send_image.delay(game.name, game.date, player.get('name'), match_info)
-            # r.delete(*game_keys)
-            # game.finished = True
-            # game.save()
+            make_and_send_image.delay(game.name, game.date, player.get('name'), match_info)
+            r.delete(*game_keys)
+            game.finished = True
+            game.save()
         return JsonResponse({'status': 'hello'})
 
 

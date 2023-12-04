@@ -172,7 +172,7 @@ def load_config(path: str = None) -> Config:
         misc=Miscellaneous(),
     )
 
-config = load_config(".env.tgbot")
+config = load_config("tg_bot/.env.tgbot")
 storage = MemoryStorage()
 
 bot = Bot(token=config.tg_bot.token, parse_mode="HTML")

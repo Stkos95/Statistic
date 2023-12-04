@@ -11,6 +11,8 @@ COPY requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 COPY . .
 
+RUN chmod a+x entry-point.sh
+
 #COPY entrypoint.sh .
 RUN chmod a+x tg_bot/entrypoint.sh
 
