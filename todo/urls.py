@@ -22,3 +22,6 @@ urlpatterns = [
     path('', include('tasks.urls')),
     path('statistic/', include('statist.urls')),
 ]
+
+
+handler403 = 'statist.views.error_forbidden_view'

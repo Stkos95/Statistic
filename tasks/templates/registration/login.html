@@ -6,15 +6,15 @@
 <div class="error_field">{{ form.non_field_errors }}</div>
 <h1>Авторизация: </h1>
 
+{{ next }}
 
-
-<form class="my-form" method="post">
+<form class="my-form" method="post" novalidate>
     {% csrf_token %}
 {% for f in form %}
     <p><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}</p>
     <div class="form-error">{{ f.errors }}</div>
     {% endfor %}
-    <input type="hidden" name="next" value="/schedule">
+    <input type="hidden" name="next" value="{{ next }}">
     <input type="submit" value="Войти">
 
 </form>

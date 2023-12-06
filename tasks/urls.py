@@ -3,6 +3,8 @@ from . import views
 from django.contrib.auth.views import LoginView, LogoutView
 
 
+app_name = 'tasks'
+
 urlpatterns = [
     path('', views.home, name='home'),
     path('schedule/', views.schedule_redirect, name='schedule'),

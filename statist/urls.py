@@ -17,3 +17,4 @@ urlpatterns = [
     path('close/', views.on_close, name='on_close'),
     path('check_players/', views.get_prepopulated_players, name='get_players')
 ]
+

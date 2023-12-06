@@ -12,7 +12,8 @@ from .models import Actions, Players, Game
 from .count import accumulate_statistic
 from .statistic_to_image import OurTeamImage
 from .tasks import make_and_send_image, add_result_to_db
-
+from django.template import loader
+from django.http import HttpResponseForbidden
 
 
 r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, decode_responses=True)
@@ -28,6 +29,7 @@ class MatchInfo:
 
 
 class InitView(PermissionRequiredMixin, TemplateView):
+    login_url = 'tasks:login'
     template_name = 'statist/initial.html'
     permission_required = 'statist.can_add_new_game'
 
@@ -213,3 +215,8 @@ def get_prepopulated_players(request):
 def delete_game(request, game_id):
     game = get_object_or_404(Game, pk=game_id)
     game.active = False
+
+
+def error_forbidden_view(request, exception):
+    content = loader.render_to_string('errors/error403.html', {}, request)
+    return HttpResponseForbidden(content=content)

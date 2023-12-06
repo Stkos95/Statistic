@@ -4,18 +4,20 @@
   hosts: my_server
   vars:
     ansible_user: root
+    path: my_project
 #    username: {{ username }}
-    keys_name: {{ keys_name|default(id_ed25519.pub) }}
+    keys_name: 'id_ed25519.pub'
+
   tasks:
     - name: Prepare server
       block:
-#        - name: passwordless sudo
-#          lineinfile:
-#            path: /etc/sudoers
-#            state: present
-#            regexp: "^%sudo"
-#            line: "%sudo ALL=(ALL) NOPASSWD: ALL"
-#            validate: "/usr/sbin/visudo -cf %s"
+        - name: passwordless sudo
+          lineinfile:
+            path: /etc/sudoers
+            state: present
+            regexp: "^%sudo"
+            line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+            validate: "/usr/sbin/visudo -cf %s"
         - name: add user
           user:
             name: "{{ username }}"
@@ -24,12 +26,12 @@
             groups: sudo
             append: true
             create_home: true
+          register: user_out
         - name: add ssh keys
           ansible.posix.authorized_key:
             user: "{{ username }}"
             state: present
             key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/{{ keys_name }}') }}"
-          debugger: always
         - name: Disable password authentication
           lineinfile:
             path: /etc/ssh/sshd_config
@@ -119,10 +121,22 @@
 
 # Копирование данных на сервер.
     - name: Send data to server
-      ansible.builtin.copy:
-        src: ./
-        dest: /root/ansible-copied/
+      ansible.builtin.git:
+        repo: https://github.com/Stkos95/Statistic.git
+        dest: /root/wtf/
+      register: out
 
+    - name: debug git
+      debug:
+        var: out
+    - name: Copy .env, .ini
+      ansible.builtin.copy:
+        dest: '/root/wtf/{{ item }}'
+        src: '{{ item }}'
+      with_items:
+        - hosts.ini
+        - .env
+        - tg_bot/.env.tgbot
 
     - name: Install docker and docker-compose for python
       pip:
@@ -132,7 +146,7 @@
 
     - name: Run docker-compose.yml
       community.docker.docker_compose:
-        project_src: /root/ansible-copied/
+        project_src: /root/wtf/
         state: present
         build: true
 

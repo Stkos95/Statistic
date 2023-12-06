@@ -11,7 +11,7 @@ class Category(models.Model):
     slug = models.SlugField()
 
     def get_absolute_url(self):
-        return reverse('schedule_category', args=[self.slug])
+        return reverse('tasks:schedule_category', args=[self.slug])
 
     def __str__(self):
         return self.name
@@ -39,7 +39,7 @@ class Task(models.Model):
 
 
     def get_absolute_url(self):
-        return reverse('task_detail', args=[self.id])
+        return reverse('tasks:task_detail', args=[self.id])
 
 
 

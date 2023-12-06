@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 def schedule_redirect(request: HttpRequest):
-    return redirect('schedule_category', slug='all')
+    return redirect('tasks:schedule_category', slug='all')
 
 
 def about(request):
@@ -98,26 +98,31 @@ class Test(ListView):
 
 
     def get_queryset(self):
+        if self.request.user.is_authenticated:
+            print('hello')
+            all_tasks = Task.objects.filter(user=self.request.user)
 
-        all_tasks = Task.objects.filter(user=self.request.user)
+            category_slug = self.kwargs['slug']
 
-        cs = self.kwargs['slug']
+            if category_slug == 'empty':
+                all_tasks = all_tasks.filter(category__isnull=True)
 
-        if cs == 'empty':
-            all_tasks = all_tasks.filter(category__isnull=True)
+            elif category_slug != 'empty' and category_slug != 'all':
 
-        elif cs != 'empty' and cs != 'all':
+                all_tasks = all_tasks.filter(category__slug=category_slug)
+            date = self.kwargs.get('date', None)
+            if date:
+                all_tasks = all_tasks.filter(deadline__date=date)
 
-            all_tasks = all_tasks.filter(category__slug=cs)
-        date = self.kwargs.get('date', None)
-        if date:
-            all_tasks = all_tasks.filter(deadline__date=date)
+        else:
+            all_tasks = Task.objects.all()
+            print('world')
 
         return all_tasks
 
 
 class MyLoginView(LoginView):
-    pass
+    next_page = 'tasks:schedule'
 
 
 
