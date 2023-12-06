@@ -34,13 +34,12 @@ services:
     entrypoint: ["celery", "-A", "todo.celery1", "worker", "-l", "info"]
     networks:
       - rabbitmq
+      - postgres
     env_file:
       - tg_bot/.env.tgbot
       - .env
     depends_on:
       - rabbitmq
-    volumes:
-      - web_todo1:/app/
 #
   tg-bot-worker:
     container_name: tg-bot-worker
@@ -54,8 +53,7 @@ services:
       - ./.env
     depends_on:
       - rabbitmq
-    volumes:
-      - web_todo1:/app/
+      - postgres
 
   postgres:
     container_name: postgres

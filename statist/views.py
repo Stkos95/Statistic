@@ -148,7 +148,7 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
 
             # test_bites.delay(tt.getvalue())
 
-            make_and_send_image.delay(game.name, game.date, player.get('name'), match_info)
+            make_and_send_image.delay(game.name, game.date, player.get('name'), d)
             r.delete(*game_keys)
             game.finished = True
             game.save()

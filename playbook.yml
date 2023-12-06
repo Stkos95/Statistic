@@ -1,0 +1,140 @@
+---
+# Конфиг для установки докера на сервере
+- name: Preconfig
+  hosts: my_server
+  vars:
+    ansible_user: root
+#    username: {{ username }}
+    keys_name: {{ keys_name|default(id_ed25519.pub) }}
+  tasks:
+    - name: Prepare server
+      block:
+#        - name: passwordless sudo
+#          lineinfile:
+#            path: /etc/sudoers
+#            state: present
+#            regexp: "^%sudo"
+#            line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+#            validate: "/usr/sbin/visudo -cf %s"
+        - name: add user
+          user:
+            name: "{{ username }}"
+            shell: /bin/bash
+            state: present
+            groups: sudo
+            append: true
+            create_home: true
+        - name: add ssh keys
+          ansible.posix.authorized_key:
+            user: "{{ username }}"
+            state: present
+            key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/{{ keys_name }}') }}"
+          debugger: always
+        - name: Disable password authentication
+          lineinfile:
+            path: /etc/ssh/sshd_config
+            state: present
+            regexp: "^#?PasswordAuthentication"
+            line: "PasswordAuthentication no"
+        - name: delete sshd_config.d files
+          lineinfile:
+            path: /etc/ssh/sshd_config
+            state: absent
+            regexp: "^Include.*sshd_config.d.*"
+        - name: reboot ssh service
+          service:
+            name: ssh
+            state: reloaded
+        - name: Update apt-get
+          apt:
+            upgrade: yes
+            update_cache: yes
+            cache_valid_time: 86400
+    - name: Docker setup
+      block:
+        - name: Add universe
+          ansible.builtin.apt_repository:
+            repo: "deb http://us.archive.ubuntu.com/ubuntu/ {{ ansible_distribution_release }}  universe"
+            state: present
+        - name: Install extra packages
+          ansible.builtin.apt:
+            name:
+              - ca-certificates
+              - curl
+              - gnupg
+              - gpg
+            update-cache: true
+            cache_valid_time: 86400
+        - name: Add key docker gpg
+          ansible.builtin.apt_key:
+            url: "https://download.docker.com/linux/ubuntu/gpg"
+              #   keyring: /etc/apt/keyrings/docker.gpg
+            state: present
+        - name: Add the repository to Apt sources
+          ansible.builtin.apt_repository:
+            repo: >
+              deb
+              https://download.docker.com/linux/ubuntu
+              {{ ansible_distribution_release }} stable
+            state: present
+            update-cache: true
+            filename: docker
+        - name: Install docker-ce
+          ansible.builtin.apt:
+            name: docker-ce
+            update-cache: true
+        - name: Check docker installed successfully
+          ansible.builtin.service:
+            name: docker
+            state: restarted
+            enabled: true
+
+    - name: Docker compose setup
+      ansible.builtin.apt:
+        name: docker-compose-plugin
+        update-cache: true
+
+
+    - name: Permisions add block
+      vars:
+        group_name: "docker"
+      block:
+        - name: Create group Docker
+          ansible.builtin.group:
+            name: "{{ group_name }}"
+            state: present
+          register: groupss
+        - name: For debug
+          ansible.builtin.debug:
+            var: groupss.name
+        - name: Create user
+          ansible.builtin.user:
+            name: test_user
+            append: true
+            groups: "{{ group_name }}"
+
+#        - name: Rebooting
+#          ansible.builtin.reboot:
+#            msg: 'Currently rebooting'
+
+# Копирование данных на сервер.
+    - name: Send data to server
+      ansible.builtin.copy:
+        src: ./
+        dest: /root/ansible-copied/
+
+
+    - name: Install docker and docker-compose for python
+      pip:
+        name:
+         - docker
+         - docker-compose
+
+    - name: Run docker-compose.yml
+      community.docker.docker_compose:
+        project_src: /root/ansible-copied/
+        state: present
+        build: true
+
+
+
