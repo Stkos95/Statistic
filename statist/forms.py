@@ -8,5 +8,16 @@ class TestForm(forms.Form):
 
 
 
+class InitForm(forms.Form):
+    name = forms.CharField(max_length=255, label='Название игры', empty_value='Пока пусто', initial="Название игры", required=True)
+    date = forms.DateField(label='Дата игры', widget=forms.DateInput(attrs={'type': 'date'}))
+    url = forms.URLField(label='Ссылка для видео', initial='https://www.youtube.com/watch?v=fEoQsPvcZGs&t=264s')
+
+    class Meta:
+        widgets = {
+            'date': forms.DateInput
+        }
+
+
 
 

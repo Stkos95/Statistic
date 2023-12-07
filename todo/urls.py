@@ -24,4 +24,4 @@ urlpatterns = [
 ]
 
 
-handler403 = 'statist.views.error_forbidden_view'
+# handler403 = 'statist.views.error_forbidden_view'

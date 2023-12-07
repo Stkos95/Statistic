@@ -12,15 +12,19 @@
  <h1>Укажите следующую информацию:</h1>
         <hr>
 
-        <form method="post" action="{% url 'statistic:count' %}" autocomplete="off">
+        <form method="post" action="{% url 'statistic:initial' %}" autocomplete="off" novalidate>
             {% csrf_token %}
+            {{ form.as_p }}
+            {{form.errors}}
 
-            <div class="game-info">
-                <label for="game-name">Название матча:</label>
-                <input type="text" id="game-name" value="Название матча" name="game-name">
-                <label for="game-date">Дата матча:</label>
-                <input type="date" id="game-date" name="game-date">
-            </div>
+<!--            <p><label for="{{ f.id_label_for }}">{{ f.label }}: </label> {{ f }}</p>-->
+
+<!--            <div class="game-info">-->
+<!--                <label for="game-name">Название матча:</label>-->
+<!--                <input type="text" id="game-name" value="Название матча" name="game-name">-->
+<!--                <label for="game-date">Дата матча:</label>-->
+<!--                <input type="date" id="game-date" name="game-date">-->
+<!--            </div>-->
             {% if matches %}
             <div class="unfinished-matches">
                 <h3>У вас есть незаконченные матчи:</h3>

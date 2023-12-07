@@ -4,10 +4,13 @@ import json
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import JsonResponse, HttpRequest
+from django.urls import reverse
+from django.views.generic import FormView
 from django.views.generic.base import TemplateView
 from django.conf import settings
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404, render
 
+from .forms import InitForm
 from .models import Actions, Players, Game
 from .count import accumulate_statistic
 from .statistic_to_image import OurTeamImage
@@ -28,15 +31,46 @@ class MatchInfo:
     actions: list
 
 
-class InitView(PermissionRequiredMixin, TemplateView):
-    login_url = 'tasks:login'
+# class InitView(PermissionRequiredMixin, TemplateView):
+#     login_url = 'tasks:login'
+#     template_name = 'statist/initial.html'
+#     permission_required = 'statist.can_add_new_game'
+#
+#     def get(self, request, *args, **kwargs):
+#         print(request.user.has_perm('statist.can_add_new_game'))
+#         player_matches = request.user.game_set.filter(finished=False, active=True)
+#         return self.render_to_response(context={'matches': player_matches})
+
+
+class InitView(PermissionRequiredMixin, FormView):
+    form_class = InitForm
     template_name = 'statist/initial.html'
     permission_required = 'statist.can_add_new_game'
 
-    def get(self, request, *args, **kwargs):
-        print(request.user.has_perm('statist.can_add_new_game'))
-        player_matches = request.user.game_set.filter(finished=False, active=True)
-        return self.render_to_response(context={'matches': player_matches})
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['matches'] = self.request.user.game_set.filter(finished=False, active=True)
+        return context
+
+    def handle_no_permission(self):
+        return redirect(f'{settings.LOGIN_URL}?next={self.request.path}')
+
+    def post(self, request, *args, **kwargs):
+        print(request.POST)
+        form = InitForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            game = Game(
+                name=cd['name'],
+                date=cd['date'],
+                user=request.user,
+                url=cd['url'],
+            )
+            game.save()
+            return redirect('statistic:count_existed', game.id)
+        context = self.get_context_data()
+        return render(request, 'statist/initial.html', context=context)
+
 
 
 class CountStatisticView(PermissionRequiredMixin, TemplateView):
@@ -64,20 +98,6 @@ class CountStatisticView(PermissionRequiredMixin, TemplateView):
                 'actions': actions,
                 'statistic_type': 1})
 
-    def post(self, request, *args, **kwargs):
-
-        game_name = request.POST.get('game-name')
-        game_date = request.POST.get('game-date')
-        print(game_date)
-        game_url = request.POST.get('game_url')
-        game = Game(
-            name=game_name,
-            date=game_date,
-            user=request.user,
-            url=game_url,
-        )
-        game.save()
-        return redirect('statistic:count_existed', game.id)
 
 
 def get_player(pl, players):
