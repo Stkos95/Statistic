@@ -31,16 +31,6 @@ class MatchInfo:
     actions: list
 
 
-# class InitView(PermissionRequiredMixin, TemplateView):
-#     login_url = 'tasks:login'
-#     template_name = 'statist/initial.html'
-#     permission_required = 'statist.can_add_new_game'
-#
-#     def get(self, request, *args, **kwargs):
-#         print(request.user.has_perm('statist.can_add_new_game'))
-#         player_matches = request.user.game_set.filter(finished=False, active=True)
-#         return self.render_to_response(context={'matches': player_matches})
-
 
 class InitView(PermissionRequiredMixin, FormView):
     form_class = InitForm
@@ -113,6 +103,13 @@ def collect_value(key):
 def approriate_view(data, action):
     status = ('success', 'fail')
     value = {i: data[f'{action.slug}-{i}'] for i in status}
+    total = int(value['success']) + int(value['fail'])
+    try:
+        value['percent'] = int(value['success']) / total * 100
+    except ZeroDivisionError:
+        value['percent'] = 0
+    # value['total'] = sum(int(value[i]) for i in status)
+
     return value
 
 
@@ -123,6 +120,7 @@ def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
     new_player['actions'] = dict()
     for key in player_keys:
         half, data = collect_value(key)
+        print(f'{data=}')
         for action in match_info.actions:
 
             if action.name not in new_player['actions']:
@@ -136,14 +134,14 @@ def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
 
 class ResultStatisticView(PermissionRequiredMixin, TemplateView):
     permission_required = 'statist.can_add_new_game'
-    template_name = 'statistic/count.html'
+    template_name = 'statist/success.html'
     status = ('success', 'fail')
 
     def get(self, request, *args, **kwargs):
         game_id = self.kwargs.get('game_id')
         game = get_object_or_404(Game, pk=game_id)
         result = dict(match={'match_name': game.name, 'match_date': game.date, }, players=list())
-
+        players_result_actions = {}
         players = Players.objects.all()
         actions = Actions.objects.all()
         match_info = MatchInfo(
@@ -159,22 +157,24 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
             player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
             new_player = get_player_info(game_keys, player_obj, match_info)
             result['players'].append(new_player)
+            print(result)
 
         for player in result['players']:
+
             add_result_to_db.delay(player, match_info.game.id)
             d = accumulate_statistic(player['actions'])
-            # print('1212')
-            # z = OurTeamImage()
-            # z.make_header('1','2','3')
-            # tt = z.save_to_bytes()
-
-            # test_bites.delay(tt.getvalue())
-
+            players_result_actions[player['name']] = d
             make_and_send_image.delay(game.name, game.date, player.get('name'), d)
-            r.delete(*game_keys)
-            game.finished = True
-            game.save()
-        return JsonResponse({'status': 'hello'})
+        r.delete(*game_keys)
+        game.finished = True
+        game.save()
+        return self.render_to_response(context={
+            'match_name': result['match']['match_name'],
+            'match_date': result['match']['match_date'],
+            'players': players_result_actions,
+            'actions': actions
+        })
+
 
 
 def get_any_data(request, *args):

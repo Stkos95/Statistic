@@ -1,13 +1,57 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf-8">
+
+
+
+    </head>
+
+    <body>
+
+        <h1>Статистика успешно посчитана!</h1>
+
+        <h2>Общая информация по игрокам:</h2>
+
+        <table>
+            <tr>
+                {% for action in actions %}
+                <th>
+                    action.name
+                </th>
+                {% endfor %}
+            </tr>
+            {% for player in players %}
+            <tr>
+                <th>
+                    {{ player }}
+                </th>
+                {% for act in player.actions %}
+                <td>
+                    act
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
 
 
 
 
-{% block content %}
-
-<h1>Командная статистика!</h1>
-
-<h2>Успех!</h2>
 
 
-{% endblock %}
+
+        </table>
+
+
+
+    </body>
+
+
+</html>
+
+
+
+
+
+
