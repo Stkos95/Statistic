@@ -115,18 +115,19 @@ def approriate_view(data, action):
 
 def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
     new_player = {}
+    actions = {}
     player_keys = [key for key in game_keys if f':{player_obj.id}:' in key]
-    new_player['name'] = player_obj.name
-    new_player['actions'] = dict()
     for key in player_keys:
         half, data = collect_value(key)
         print(f'{data=}')
         for action in match_info.actions:
 
-            if action.name not in new_player['actions']:
-                new_player['actions'].setdefault(action.name, {})
+            if action.name not in actions:
+                actions.setdefault(action.name, {})
             value = approriate_view(data, action)
-            new_player['actions'][action.name][half] = value
+
+            actions[action.name][half] = value
+    new_player[player_obj.name] = {'actions': actions}
     return new_player
 
 
@@ -140,7 +141,7 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         game_id = self.kwargs.get('game_id')
         game = get_object_or_404(Game, pk=game_id)
-        result = dict(match={'match_name': game.name, 'match_date': game.date, }, players=list())
+        result = dict(match={'match_name': game.name, 'match_date': game.date, }, players=dict())
         players_result_actions = {}
         players = Players.objects.all()
         actions = Actions.objects.all()
@@ -156,15 +157,17 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
         for player_id in players_id_list:
             player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
             new_player = get_player_info(game_keys, player_obj, match_info)
-            result['players'].append(new_player)
+            result['players'].update(new_player)
             print(result)
+
+
 
         for player in result['players']:
 
             add_result_to_db.delay(player, match_info.game.id)
-            d = accumulate_statistic(player['actions'])
-            players_result_actions[player['name']] = d
-            make_and_send_image.delay(game.name, game.date, player.get('name'), d)
+            # d = accumulate_statistic(player['actions'])
+            # players_result_actions[player['name']] = d
+            # make_and_send_image.delay(game.name, game.date, player.get('name'), d)
         r.delete(*game_keys)
         game.finished = True
         game.save()
