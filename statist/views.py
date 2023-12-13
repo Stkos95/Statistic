@@ -101,33 +101,46 @@ def collect_value(key):
 
 
 def approriate_view(data, action):
-    status = ('success', 'fail')
-    value = {i: data[f'{action.slug}-{i}'] for i in status}
-    total = int(value['success']) + int(value['fail'])
+
+    value_fail = int(data[f'{action.slug}-{"fail"}'])
+    value_success = int(data[f'{action.slug}-{"success"}'])
+    total = value_fail + value_success
     try:
-        value['percent'] = int(value['success']) / total * 100
+        value_percent = value_success / total * 100
     except ZeroDivisionError:
-        value['percent'] = 0
+        value_percent = 0
     # value['total'] = sum(int(value[i]) for i in status)
 
-    return value
+    return value_success, value_fail, value_percent
 
 
 def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
     new_player = {}
     actions = {}
     player_keys = [key for key in game_keys if f':{player_obj.id}:' in key]
+    first = True if len(player_keys) > 1 else False
     for key in player_keys:
+
         half, data = collect_value(key)
-        print(f'{data=}')
+
         for action in match_info.actions:
 
             if action.name not in actions:
-                actions.setdefault(action.name, {})
-            value = approriate_view(data, action)
+                actions.setdefault(action.name, {'itog': {'success': 0, 'fail': 0, 'percent': 0}})
+            value_success, value_fail, value_percent = approriate_view(data, action)
+            actions[action.name][half] = {'success': value_success, 'fail': value_fail, 'percent': value_percent}
 
-            actions[action.name][half] = value
-    new_player[player_obj.name] = {'actions': actions}
+            actions[action.name]['itog']['success'] += value_success
+            actions[action.name]['itog']['fail'] += value_fail
+
+            if not first:
+                total = actions[action.name]['itog']['success'] + actions[action.name]['itog']['fail']
+                try:
+                    actions[action.name]['itog']['percent'] = actions[action.name]['itog']['success'] / total * 100
+                except:
+                    actions[action.name]['itog']['percent'] = 0
+        first = False
+    new_player[player_obj.name] = actions
     return new_player
 
 
@@ -142,7 +155,6 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
         game_id = self.kwargs.get('game_id')
         game = get_object_or_404(Game, pk=game_id)
         result = dict(match={'match_name': game.name, 'match_date': game.date, }, players=dict())
-        players_result_actions = {}
         players = Players.objects.all()
         actions = Actions.objects.all()
         match_info = MatchInfo(
@@ -158,13 +170,11 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
             player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
             new_player = get_player_info(game_keys, player_obj, match_info)
             result['players'].update(new_player)
-            print(result)
+        print(result)
 
-
-
-        for player in result['players']:
-
-            add_result_to_db.delay(player, match_info.game.id)
+        # for player in result['players']:
+        #
+        #     add_result_to_db.delay(player, match_info.game.id)
             # d = accumulate_statistic(player['actions'])
             # players_result_actions[player['name']] = d
             # make_and_send_image.delay(game.name, game.date, player.get('name'), d)
@@ -174,7 +184,7 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
         return self.render_to_response(context={
             'match_name': result['match']['match_name'],
             'match_date': result['match']['match_date'],
-            'players': players_result_actions,
+            'players': result['players'],
             'actions': actions
         })
 

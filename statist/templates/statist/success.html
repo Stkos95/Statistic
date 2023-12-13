@@ -43,10 +43,45 @@
 
         </table>
 
+    <table>
+        <tr>
+            {% for action in actions%}
+            <th>
+                {{ action }}
+            </th>
+            {% endfor %}
+        </tr>
+        {% for player, player_value in players.items %}
+            <tr>
+                <th>
+                    {{ player }}
+                </th>
+                {% for act in player_value
+
+            </tr>
+
+
+        {% endfor %}
+        <>
+    </table>
+
+    <hr>
+    {% for player, val in players.items %}
+    <p>{{ player }}</p>
+    <p>{{ val }}</p>
+    {% endfor %}
+
 
 
     </body>
 
+<script>
+    console.log('{{players}}')
+    console.log('opppp')
+
+
+
+</script>
 
 </html>
 
