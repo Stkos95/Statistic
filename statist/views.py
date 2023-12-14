@@ -117,34 +117,48 @@ def approriate_view(data, action):
 def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
     new_player = {}
     actions = {}
+    half_data = {}
+    itog_dict = {}
+    previous_half = 0
     player_keys = [key for key in game_keys if f':{player_obj.id}:' in key]
     first = True if len(player_keys) > 1 else False
     for key in player_keys:
 
         half, data = collect_value(key)
-
+        # new_player.update({half: {player_obj.name: {}}})
         for action in match_info.actions:
 
-            if action.name not in actions:
-                actions.setdefault(action.name, {'itog': {'success': 0, 'fail': 0, 'percent': 0}})
+
+
+            # if action.name not in actions:
+
             value_success, value_fail, value_percent = approriate_view(data, action)
-            actions[action.name][half] = {'success': value_success, 'fail': value_fail, 'percent': value_percent}
+            actions[action.name] = {'success': value_success, 'fail': value_fail, 'percent': value_percent}
 
-            actions[action.name]['itog']['success'] += value_success
-            actions[action.name]['itog']['fail'] += value_fail
-
-            if not first:
-                total = actions[action.name]['itog']['success'] + actions[action.name]['itog']['fail']
+            try:
+                prev_value_dict = new_player[previous_half][player_obj.name][action.name]
+                prev_value_success = prev_value_dict['success']
+                prev_value_fail = prev_value_dict['fail']
+                total = prev_value_success + prev_value_fail
                 try:
-                    actions[action.name]['itog']['percent'] = actions[action.name]['itog']['success'] / total * 100
-                except:
-                    actions[action.name]['itog']['percent'] = 0
-        first = False
-    new_player[player_obj.name] = actions
+                    itog_percent = prev_value_success / total * 100
+                except ZeroDivisionError:
+                    itog_percent = 0
+                itog_dict[action.name] = {'success': prev_value_success, 'fail': prev_value_fail, 'percent': itog_percent}
+            except KeyError:
+                itog_dict[action.name] = {'success': value_success, 'fail': value_fail, 'percent': value_percent}
+
+        previous_half = half
+
+
+        half_data[player_obj.name] = actions
+        new_player[half] = half_data
+    new_player['itog'] = itog_dict
+
     return new_player
 
 
-
+from pprint import pprint
 
 class ResultStatisticView(PermissionRequiredMixin, TemplateView):
     permission_required = 'statist.can_add_new_game'
@@ -166,12 +180,25 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
 
         game_keys = r.keys(f'{game.id}:*')
         players_id_list = set([id_.split(':')[1] for id_ in game_keys])
-        players_halfs_list = set([id_.split(':')[2] for id_ in game_keys])
-
-        for half in players_halfs_list:
-            for pla
+        halfs_list = set([id_.split(':')[2] for id_ in game_keys])
+        halfs = {}
+        for player_id in players_id_list:
             player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
+            new_player = get_player_info(game_keys, player_obj, match_info)
+            pprint(f"{new_player}")
 
+
+
+
+        # for half in halfs_list:
+        #     half_data = {}
+        #
+        #     for player_id in players_id_list:
+        #         player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
+        #         new_player = get_player_info(game_keys, player_obj, match_info)
+        #         half_data.update(new_player)
+        #
+        #     result['data'].update({half: half_data})
 
 
 
