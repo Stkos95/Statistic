@@ -154,7 +154,8 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         game_id = self.kwargs.get('game_id')
         game = get_object_or_404(Game, pk=game_id)
-        result = dict(match={'match_name': game.name, 'match_date': game.date, }, players=dict())
+        # add half to Game model to store amount of halfs and put it to match info
+        result = dict(match={'match_name': game.name, 'match_date': game.date, }, data=dict())
         players = Players.objects.all()
         actions = Actions.objects.all()
         match_info = MatchInfo(
@@ -165,12 +166,21 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
 
         game_keys = r.keys(f'{game.id}:*')
         players_id_list = set([id_.split(':')[1] for id_ in game_keys])
+        players_halfs_list = set([id_.split(':')[2] for id_ in game_keys])
 
-        for player_id in players_id_list:
+        for half in players_halfs_list:
+            for pla
             player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
-            new_player = get_player_info(game_keys, player_obj, match_info)
-            result['players'].update(new_player)
-        print(result)
+
+
+
+
+
+        # for player_id in players_id_list:
+        #     player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
+        #     new_player = get_player_info(game_keys, player_obj, match_info)
+        #     result['players'].update(new_player)
+        # print(result)
 
         # for player in result['players']:
         #
