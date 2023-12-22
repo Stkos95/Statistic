@@ -116,16 +116,14 @@ def approriate_view(data, action):
 
 def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
     new_player = {}
-    actions = {}
-    half_data = {}
     itog_dict = {}
     previous_half = 0
     player_keys = [key for key in game_keys if f':{player_obj.id}:' in key]
     first = True if len(player_keys) > 1 else False
     for key in player_keys:
-
+        actions = {}
+        half_data = {}
         half, data = collect_value(key)
-        # new_player.update({half: {player_obj.name: {}}})
         for action in match_info.actions:
 
 
@@ -137,8 +135,8 @@ def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
 
             try:
                 prev_value_dict = new_player[previous_half][player_obj.name][action.name]
-                prev_value_success = prev_value_dict['success']
-                prev_value_fail = prev_value_dict['fail']
+                prev_value_success = prev_value_dict['success'] + value_success
+                prev_value_fail = prev_value_dict['fail'] + value_fail
                 total = prev_value_success + prev_value_fail
                 try:
                     itog_percent = prev_value_success / total * 100
@@ -153,7 +151,7 @@ def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
 
         half_data[player_obj.name] = actions
         new_player[half] = half_data
-    new_player['itog'] = itog_dict
+    new_player['itog'] = {player_obj.name: itog_dict}
 
     return new_player
 
@@ -168,6 +166,7 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         game_id = self.kwargs.get('game_id')
         game = get_object_or_404(Game, pk=game_id)
+        res = {}
         # add half to Game model to store amount of halfs and put it to match info
         result = dict(match={'match_name': game.name, 'match_date': game.date, }, data=dict())
         players = Players.objects.all()
@@ -181,11 +180,18 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
         game_keys = r.keys(f'{game.id}:*')
         players_id_list = set([id_.split(':')[1] for id_ in game_keys])
         halfs_list = set([id_.split(':')[2] for id_ in game_keys])
+        halfs_list = list(halfs_list)
         halfs = {}
         for player_id in players_id_list:
             player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
             new_player = get_player_info(game_keys, player_obj, match_info)
-            pprint(f"{new_player}")
+            # res |= new_player
+            for h in halfs_list + ['itog']:
+                if h not in res:
+                    res[h] = {}
+                res[h].update(new_player[h])
+        print(res)
+
 
 
 
