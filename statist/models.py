@@ -10,17 +10,29 @@ class Actions(models.Model):
     type = models.ForeignKey('Type',
                              related_name='actions',
                              on_delete=models.CASCADE)
-
-
+    # part = models.ForeignKey('Parts',
+    #                          related_name='actions',
+    #                          on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
 
 
+# class Parts(models.Model):
+#     name = models.CharField(max_length=255)
+#     type = models.ForeignKey('Type',
+#                              related_name='parts',
+#                              on_delete=models.CASCADE)
+#
+#     def __str__(self):
+#         return self.name
+
 
 class Type(models.Model):
     name = models.CharField(max_length=20)
     slug = models.SlugField(unique=True)
+    halfs = models.IntegerField(default=2)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -37,6 +49,10 @@ class Game(models.Model):
     watched = models.IntegerField(default=0)
     url = models.URLField(blank=True, null=True)
     active = models.BooleanField(default=True)
+    type = models.ForeignKey('Type',
+                             related_name='games',
+                             on_delete=models.CASCADE,
+                             null=True, blank=True)
 
     def get_absolute_url(self):
         return reverse('statistic:count_existed', args=[self.id])
@@ -85,9 +101,9 @@ class Players(models.Model):
 class Results(models.Model):
     player = models.ForeignKey('Players',
                                on_delete=models.CASCADE)
-    game = models.ForeignKey('Game',
-                             on_delete=models.CASCADE, blank=True)
-    # game = models.CharField(max_length=255)
+    # game = models.ForeignKey('Game',
+    #                          on_delete=models.CASCADE, blank=True)
+    game = models.CharField(max_length=255)
     half = models.IntegerField(blank=True, null=True)
     action = models.ForeignKey('Actions',
                                on_delete=models.CASCADE)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Actions, Players, ResultsJson, Game
+from .models import Actions, Players, ResultsJson, Game, Type
 
 @admin.register(Actions)
 class ActionsAdmin(admin.ModelAdmin):
@@ -20,3 +20,7 @@ class ResultsJsonAdming(admin.ModelAdmin):
 class GameAdmin(admin.ModelAdmin):
     list_display = ['name', 'slug', 'date']
     prepopulated_fields = {'slug': ('name',)}
+
+@admin.register(Type)
+class TypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'halfs', 'user']

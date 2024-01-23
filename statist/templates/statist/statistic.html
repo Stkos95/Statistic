@@ -52,8 +52,13 @@
 </div>
 
 
-<span class="half selected" onclick="halfSelect(this)" data-half="1">1 Тайм</span>
-<span class="half" onclick="halfSelect(this)" data-half="2">2 Тайм</span>
+
+
+{% for current_half in halfs %}
+    <span class="half" onclick="halfSelect(this)" data-half="{{ current_half }}">{{ current_half }} Тайм</span>
+    <!--<span class="half selected" onclick="halfSelect(this)" data-half="1">1 Тайм</span>-->
+    <!--<span class="half" onclick="halfSelect(this)" data-half="2">2 Тайм</span>-->
+{% endfor %}
 
 
 <div class="checkbox-wrapper-8">
@@ -91,10 +96,10 @@
 </div>
 
 <input type="hidden" name="statistic_type" value="{{ statistic_type }}">
-<input type="hidden" name="game_id" value="{{ game.id }}">
+<input type="hidden" name="game_id" value="{{ game_id }}">
 <p>You have watched: {{ request.session.video_stopped }}</p>
 
-<form action="{% url 'statistic:result' game.id %}" method="get">
+<form action="{% url 'statistic:result' game_id %}" method="get">
     <input type="submit" value="Подтвердить">
     <!--    <input type="button" id="ajax-send" value="Подтвердить ajax">-->
 </form>

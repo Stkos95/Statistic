@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import redis
 import json
+from django import forms
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import JsonResponse, HttpRequest
@@ -9,9 +10,10 @@ from django.views.generic import FormView
 from django.views.generic.base import TemplateView
 from django.conf import settings
 from django.shortcuts import redirect, get_object_or_404, render
+from django.db.models import Q
 
 from .forms import InitForm
-from .models import Actions, Players, Game
+from .models import Actions, Players, Game, Type
 from .count import accumulate_statistic
 from .statistic_to_image import OurTeamImage
 from .tasks import make_and_send_image, add_result_to_db
@@ -33,33 +35,47 @@ class MatchInfo:
 
 
 class InitView(PermissionRequiredMixin, FormView):
-    form_class = InitForm
+    # form_class = InitForm
     template_name = 'statist/initial.html'
     permission_required = 'statist.can_add_new_game'
 
+    def get_types(self):
+        return Type.objects.values_list('id', 'name').filter(Q(user=self.request.user.id) | Q(user=None))
+
+    def get_form(self, form_class=InitForm):
+        form = InitForm()
+        form.fields['test_name'] = forms.ChoiceField(choices=self.get_types())
+        return form
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # context['types'] = Type.objects.filter(Q(user=self.request.user.id) | Q(user=None))
         context['matches'] = self.request.user.game_set.filter(finished=False, active=True)
         return context
 
     def handle_no_permission(self):
         return redirect(f'{settings.LOGIN_URL}?next={self.request.path}')
 
+
     def post(self, request, *args, **kwargs):
         print(request.POST)
         form = InitForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
+            tt = cd['test_name']
             game = Game(
                 name=cd['name'],
                 date=cd['date'],
                 user=request.user,
                 url=cd['url'],
+                type_id=cd['test_name']
             )
             game.save()
-            return redirect('statistic:count_existed', game.id)
+            # return redirect('statistic:count_existed', game.id)
+            return redirect(game, game.id)
         context = self.get_context_data()
         return render(request, 'statist/initial.html', context=context)
+    # можно ли заменить на super().post()
 
 
 
@@ -68,7 +84,15 @@ class CountStatisticView(PermissionRequiredMixin, TemplateView):
     permission_required = 'statist.can_add_new_game'
 
     def get(self, request: HttpRequest, *args, **kwargs):
-        game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
+        print(self.kwargs)
+        print(request.POST)
+        # game_type = int(self.kwargs.get('type-select'))
+        # halfs = get_object_or_404(Type, id=game_type).halfs
+        # print(f'{halfs=}')
+        game_id = self.kwargs.get('game_id')
+        d = get_object_or_404(Game, id=game_id).type.id
+        print(d)
+        # game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
         players = Players.objects.all()
         action_by_category = {
             '1': [],
@@ -84,7 +108,7 @@ class CountStatisticView(PermissionRequiredMixin, TemplateView):
             context={
                 'actions_by_category': action_by_category,
                 'players': players,
-                'game': game,
+                'game_id': game_id,
                 'actions': actions,
                 'statistic_type': 1})
 
@@ -125,9 +149,6 @@ def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
         half_data = {}
         half, data = collect_value(key)
         for action in match_info.actions:
-
-
-
             # if action.name not in actions:
 
             value_success, value_fail, value_percent = approriate_view(data, action)
@@ -147,7 +168,7 @@ def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
                 itog_dict[action.name] = {'success': value_success, 'fail': value_fail, 'percent': value_percent}
 
         previous_half = half
-
+        # для добавления значений в бд сделать чтобы можно было пробегаться по таймам (из бд) и сохранять для каждого игрока.
 
         half_data[player_obj.name] = actions
         new_player[half] = half_data
@@ -169,8 +190,8 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
         res = {}
         # add half to Game model to store amount of halfs and put it to match info
         result = dict(match={'match_name': game.name, 'match_date': game.date, }, data=dict())
-        players = Players.objects.all()
-        actions = Actions.objects.all()
+        players = Players.objects.all() # ?
+        actions = Actions.objects.all() # ?
         match_info = MatchInfo(
             game=game,
             players=players,
@@ -179,12 +200,13 @@ class ResultStatisticView(PermissionRequiredMixin, TemplateView):
 
         game_keys = r.keys(f'{game.id}:*')
         players_id_list = set([id_.split(':')[1] for id_ in game_keys])
-        halfs_list = set([id_.split(':')[2] for id_ in game_keys])
+        halfs_list = set([id_.split(':')[2] for id_ in game_keys]) # halfs get from db models
         halfs_list = list(halfs_list)
         halfs = {}
         for player_id in players_id_list:
             player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
             new_player = get_player_info(game_keys, player_obj, match_info)
+            print(f'{new_player=}')
             # res |= new_player
             for h in halfs_list + ['itog']:
                 if h not in res:
@@ -238,6 +260,8 @@ def get_any_data(request, *args):
     return (data.get(i) for i in args)
 
 
+
+# Сделать один запрос со всеми добавленными игроками, а не делать много запросов с одним игроком.
 def initial_players(request):
     data = json.load(request)
     game_id = data.get('game_id')
