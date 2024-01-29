@@ -24,3 +24,4 @@ class GameAdmin(admin.ModelAdmin):
 @admin.register(Type)
 class TypeAdmin(admin.ModelAdmin):
     list_display = ['name', 'slug', 'halfs', 'user']
+    prepopulated_fields = {'slug': ('name',)}

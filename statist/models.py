@@ -5,27 +5,36 @@ from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 
 class Actions(models.Model):
-    name = models.CharField(max_length=50)
-    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=50, verbose_name='Действие:')
+    slug = models.SlugField()
     type = models.ForeignKey('Type',
                              related_name='actions',
-                             on_delete=models.CASCADE)
-    # part = models.ForeignKey('Parts',
-    #                          related_name='actions',
-    #                          on_delete=models.CASCADE)
+                             on_delete=models.CASCADE,
+                             null=True, blank=True)
+    part = models.ForeignKey('Parts',
+                             related_name='actions',
+                             on_delete=models.CASCADE,
+                             null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
 
     def __str__(self):
         return self.name
 
 
-# class Parts(models.Model):
-#     name = models.CharField(max_length=255)
-#     type = models.ForeignKey('Type',
-#                              related_name='parts',
-#                              on_delete=models.CASCADE)
-#
-#     def __str__(self):
-#         return self.name
+class Parts(models.Model):
+    name = models.CharField(max_length=255, verbose_name='Название раздела:')
+    type = models.ForeignKey('Type',
+                             related_name='parts',
+                             on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
 
 
 class Type(models.Model):
@@ -33,6 +42,9 @@ class Type(models.Model):
     slug = models.SlugField(unique=True)
     halfs = models.IntegerField(default=2)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, blank=True, null=True)
+
+    def get_absolute_url(self):
+        return reverse('statistic:detail_type', args=[self.id, self.slug])
 
     def __str__(self):
         return self.name

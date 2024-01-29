@@ -22,5 +22,14 @@ class InitForm(forms.Form):
         }
 
 
+#
+class ActionForm(forms.Form):
+    name = forms.CharField(max_length=255)
+
+#
+# class GameTypeCreationForm(forms.Form):
+#     name = forms.CharField(max_length=255, label='Группа действий:')
+#
+#
 
 

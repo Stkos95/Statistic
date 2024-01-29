@@ -6,14 +6,14 @@ from django import forms
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import JsonResponse, HttpRequest
 from django.urls import reverse
-from django.views.generic import FormView
+from django.views.generic import FormView, ListView, DetailView
 from django.views.generic.base import TemplateView
 from django.conf import settings
 from django.shortcuts import redirect, get_object_or_404, render
 from django.db.models import Q
 
 from .forms import InitForm
-from .models import Actions, Players, Game, Type
+from .models import Actions, Players, Game, Type, Parts
 from .count import accumulate_statistic
 from .statistic_to_image import OurTeamImage
 from .tasks import make_and_send_image, add_result_to_db
@@ -320,3 +320,77 @@ def delete_game(request, game_id):
 def error_forbidden_view(request, exception):
     content = loader.render_to_string('errors/error403.html', {}, request)
     return HttpResponseForbidden(content=content)
+
+
+#=========================================================
+from django.forms.models import BaseInlineFormSet
+from django.forms import inlineformset_factory
+
+class BaseChildrenFormset(BaseInlineFormSet):
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+
+        form.nested = PartsFormset(
+            instance=form.instance,
+            data=form.data if form.is_bound else None,
+            files=form.files if form.is_bound else None,
+            prefix='parts-%s-%s' % (
+                form.prefix,
+                PartsFormset.get_default_prefix()),
+        )
+
+    def is_valid(self):
+        result = super().is_valid()
+        if self.is_bound:
+            for form in self.forms:
+                if hasattr(form, 'nested'):
+                    result = result and form.nested.is_valid()
+        return result
+
+    def save(self, commit=True):
+        result = super().save(commit=commit)
+        for form in self.forms:
+            print(form.nested.forms[0])
+            if hasattr(form, 'nested'):
+                if not self._should_delete_form(form):
+                    d = form.nested.save(commit=commit)
+                    print(d)
+
+
+        return result
+
+
+
+TypeFormset = inlineformset_factory(Type, Parts, fields=['name',], formset=BaseChildrenFormset, extra=0, can_delete=False)
+PartsFormset = inlineformset_factory(Parts, Actions, fields=['name'], extra=0, can_delete=False)
+
+
+
+class TypesManageView(ListView):
+    model = Type
+
+    def get_queryset(self):
+        return Type.objects.filter(user=self.request.user)
+
+
+class TypesDetailView(TemplateView):
+    template_name = 'statist/create_type.html'
+
+    def get(self, request, *args, **kwargs):
+        current_type = get_object_or_404(Type, pk=self.kwargs['id'])
+        formset = TypeFormset(instance=current_type)
+
+        context = self.get_context_data(**kwargs)
+        context['formset'] = formset
+        context['current_type'] = current_type
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        print(request.POST)
+        current_type = get_object_or_404(Type, pk=self.kwargs['id'])
+        form1 = TypeFormset(request.POST, instance=current_type)
+        # print(form1.is_valid())
+        if form1.is_valid():
+            print('valid')
+            z = form1.save()
+        return self.render_to_response({})

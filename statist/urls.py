@@ -15,6 +15,10 @@ urlpatterns = [
     path('count/', views.count_statistic, name='count_process'),
     path('player/', views.get_player_data, name='player_data'),
     path('close/', views.on_close, name='on_close'),
-    path('check_players/', views.get_prepopulated_players, name='get_players')
+    path('check_players/', views.get_prepopulated_players, name='get_players'),
+    path('settings/manage_types/', views.TypesManageView.as_view(), name='manage_types'),
+
+    path('settings/manage_types/<id>/<slug>/', views.TypesDetailView.as_view(), name='detail_type'),
+    # path('settings/create_type/', views.CreateGameType.as_view(), name='create_game_type') # endpoint to create custom game type.
 ]
 

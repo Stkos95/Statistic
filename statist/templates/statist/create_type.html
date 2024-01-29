@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+
+
+
+{% block content %}
+
+<h1>WORK!!</h1>
+<input type="button" name="add-part" value="Добавить раздел">
+{{ current_type.id}}
+<form method="post">
+    {% csrf_token %}
+{{ formset.management_form }}
+{{ formset.non_form_errors }}
+<div id="part">
+{% for child_form in formset.forms %}
+    <div class="parts">
+    {{ child_form }}
+
+    {% if child_form.nested %}
+
+        <div id="actions">
+            {{ child_form.nested.management_form }}
+        {{ child_form.nested.non_form_errors }}
+        {% for nested_form in child_form.nested.forms %}
+            <div class="action">
+
+            {{ nested_form }}
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    </div>
+{% endfor %}
+</div>
+    <input type="submit" value="Save">
+</form>
+
+{% endblock %}

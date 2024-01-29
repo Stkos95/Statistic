@@ -6,3 +6,20 @@ div span:last-child {
 span {
     cursor: pointer;
 }
+#part {
+
+}
+
+.parts {
+    display: inline-block;
+    background-color: #66f5db;
+    padding: 10px 20px;
+    margin-bottom: 20px;
+}
+
+
+
+
+#actions {
+    margin-top: 10px;
+}
