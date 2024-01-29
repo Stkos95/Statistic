@@ -350,11 +350,10 @@ class BaseChildrenFormset(BaseInlineFormSet):
     def save(self, commit=True):
         result = super().save(commit=commit)
         for form in self.forms:
-            print(form.nested.forms[0])
             if hasattr(form, 'nested'):
                 if not self._should_delete_form(form):
                     d = form.nested.save(commit=commit)
-                    print(d)
+
 
 
         return result
@@ -362,7 +361,7 @@ class BaseChildrenFormset(BaseInlineFormSet):
 
 
 TypeFormset = inlineformset_factory(Type, Parts, fields=['name',], formset=BaseChildrenFormset, extra=0, can_delete=False)
-PartsFormset = inlineformset_factory(Parts, Actions, fields=['name'], extra=0, can_delete=False)
+PartsFormset = inlineformset_factory(Parts, Actions, fields=['name'], extra=1, can_delete=False)
 
 
 
@@ -389,7 +388,7 @@ class TypesDetailView(TemplateView):
         print(request.POST)
         current_type = get_object_or_404(Type, pk=self.kwargs['id'])
         form1 = TypeFormset(request.POST, instance=current_type)
-        # print(form1.is_valid())
+
         if form1.is_valid():
             print('valid')
             z = form1.save()

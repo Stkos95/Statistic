@@ -23,3 +23,8 @@ span {
 #actions {
     margin-top: 10px;
 }
+
+#empty-form {
+    background-color: #888888;
+    /*display: none;*/
+}
