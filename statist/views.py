@@ -4,7 +4,7 @@ import json
 from django import forms
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.http import JsonResponse, HttpRequest
+from django.http import JsonResponse, HttpRequest, HttpResponse
 from django.urls import reverse
 from django.views.generic import FormView, ListView, DetailView
 from django.views.generic.base import TemplateView
@@ -324,9 +324,13 @@ def error_forbidden_view(request, exception):
 
 #=========================================================
 from django.forms.models import BaseInlineFormSet
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, HiddenInput, ValidationError
+from .forms import PartsForm
 
-class BaseChildrenFormset(BaseInlineFormSet):
+
+class BaseTypeFormset(BaseInlineFormSet):
+    ordering_widget = HiddenInput
+
     def add_fields(self, form, index):
         super().add_fields(form, index)
 
@@ -339,29 +343,42 @@ class BaseChildrenFormset(BaseInlineFormSet):
                 PartsFormset.get_default_prefix()),
         )
 
-    def is_valid(self):
-        result = super().is_valid()
-        if self.is_bound:
-            for form in self.forms:
-                if hasattr(form, 'nested'):
-                    result = result and form.nested.is_valid()
-        return result
+    # def is_valid(self):
+    #     result = super().is_valid()
+    #     if self.is_bound:
+    #         for form in self.forms:
+    #             if hasattr(form, 'nested'):
+    #                 result = result and form.nested.is_valid()
+    #
+    #     return result
+
+    # def clean(self):
+    #     print(dir(self))
+    #     for form in self.forms:
+    #         for nested_form in form.nested:
+    #         # print(form)
+    #             if nested_form.is_valid():
+    #
+    #                 name = nested_form.cleaned_data.get('name', None)
+    #
+    #                 if not name:
+    #                     raise ValidationError("Заполните или удалите пустые поля 'Действие'.")
+
 
     def save(self, commit=True):
         result = super().save(commit=commit)
         for form in self.forms:
             if hasattr(form, 'nested'):
                 if not self._should_delete_form(form):
-                    d = form.nested.save(commit=commit)
-
-
-
+                    form.nested.save(commit=commit)
         return result
 
+class BasePartFormset(BaseInlineFormSet):
+    ordering_widget = HiddenInput
+    deletion_widget = HiddenInput
 
-
-TypeFormset = inlineformset_factory(Type, Parts, fields=['name',], formset=BaseChildrenFormset, extra=0, can_delete=False)
-PartsFormset = inlineformset_factory(Parts, Actions, fields=['name'], extra=1, can_delete=False)
+TypeFormset = inlineformset_factory(Type, Parts, fields=['name',], formset=BaseTypeFormset, extra=0, can_delete=False, can_order=True)
+PartsFormset = inlineformset_factory(Parts, Actions, fields=['name'], min_num=1, formset=BasePartFormset, extra=0, can_delete=True, can_order=True, validate_min=True)
 
 
 
@@ -385,11 +402,27 @@ class TypesDetailView(TemplateView):
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        print(request.POST)
         current_type = get_object_or_404(Type, pk=self.kwargs['id'])
         form1 = TypeFormset(request.POST, instance=current_type)
-
+        print(form1.non_form_errors())
         if form1.is_valid():
             print('valid')
             z = form1.save()
+        else:
+            print('here))')
+            context = self.get_context_data(**kwargs)
+            context['formset'] = form1
+            context['current_type'] = current_type
+            return self.render_to_response(context)
         return self.render_to_response({})
+
+
+def test_order(request):
+    print('Пришло!!!')
+    JsonResponse({'status': 'ok',})
+
+
+
+
+#===================================================
+

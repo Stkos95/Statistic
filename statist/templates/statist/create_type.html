@@ -5,6 +5,9 @@
 
 {% block content %}
 <script src="{% static 'js/create-parts-type.js' %}"></script>
+<script src="{% static 'js/create-actions.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5sortable/0.13.3/
+html5sortable.min.js"></script>
 <input type="button" onclick="createPart(this)" name="add-part" value="Добавить раздел">
 {% if not formset.forms %}
 <h1>Разделы еще не были созданы. Нажмите на кнопку выше, чтобы создать.</h1>
@@ -14,34 +17,99 @@
     {% csrf_token %}
 {{ formset.management_form }}
 {{ formset.non_form_errors }}
-<div id="part">
-    <div id="empty-form" class="parts">
-        {{ formset.empty_form}}
+<div id="parts">
+    <div id="empty-form" class="part">
+        <span onclick="removePart(this)">X</span>
+        {% for form in formset.empty_form %}
+
+        {% if forloop.first %}
+        <label for="{{ form.id_for_label }}">{{ form.label }}</label>
+        {% endif %}
+        {{ form }}
+
+        {% endfor %}
         <div class="actions">
-            {{ formset.empty_form.nested}}
+            {{ formset.empty_form.nested.management_form }}
+            {%  for act_form in formset.empty_form.nested %}
+            <div class="action">
+                <label for="{{ form.id_for_label }}">{{ form.label }}</label>
+                {{ act_form }}
+            {% endfor %}
+            <span onclick="removeAction(this)">-</span>
+            </div>
         </div>
+        <input type="button" onclick="addAction(this)" value="Добавить действие в раздел">
     </div>
 
-{% for child_form in formset.forms %}
-    <div class="parts">
-    {{ child_form }}
+{% for child_form in formset %}
+    {{ child_form.non_form_errors}}
+    {{ child_form.errors }}
+    <div class="part" data-id="{{ child_form.instance.id }}">
+        <span onclick="removePart(this)">X</span>
+<!--        <span>{{ child_form.id }}</span>-->
+        {% for form in child_form %}
+        {% if forloop.first %}
+            <label for="{{ form.id_for_label }}">{{ form.label }}</label>
+        {% endif %}
+            {{ form }}
+        {% endfor %}
     {% if child_form.nested %}
         <div id="actions">
             {{ child_form.nested.management_form }}
         {{ child_form.nested.non_form_errors }}
         {% for nested_form in child_form.nested.forms %}
-            <div class="action">
-            {{ nested_form }}
+            <div class="action" data-id="{{ nested_form.instance.id }}">
+                {% for action_form in nested_form %}
+                {% if forloop.first %}
+                    <label for="{{ action_form.id_for_label }}">{{ action_form.label }}</label>
+                {% endif %}
+                {{ action_form }}
+                {% endfor %}
+                <span onclick="removeAction(this)">-</span>
+
+
             </div>
         {% endfor %}
         </div>
     {% endif %}
+        <input type="button" onclick="addAction(this)" value="Добавить действие в раздел">
     </div>
 {% endfor %}
 </div>
     <input type="submit" value="Save">
 </form>
 
+
+<script>
+    const OrderUrl = "{% url 'statistic:test_order' %}"
+    let options = {
+        'method': 'POST',
+        'mode': 'same-origin'
+    }
+
+    sortable('#actions', {
+    forcePlaceholderSize: true,
+    placeholderClass: 'placeholder'
+    }).forEach((element) => {
+        element.addEventListener('sortupdate', (e) => {
+            let start = 0;
+            e.target.querySelectorAll('.action').forEach((el) => {
+                const orderField = el.querySelector(`[name$="ORDER"]`);
+                // const order = parseInt(orderField.getAttribute('value'));
+                orderField.setAttribute('value', start)
+                start += 1
+                options['body'] = JSON.stringify()
+            })
+
+            console.log(actionList)
+
+
+        })
+    })
+
+
+
+</script>
 {% endblock %}
 
 

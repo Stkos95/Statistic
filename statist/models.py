@@ -15,6 +15,7 @@ class Actions(models.Model):
                              related_name='actions',
                              on_delete=models.CASCADE,
                              null=True, blank=True)
+    # order = models.IntegerField()
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -28,7 +29,7 @@ class Actions(models.Model):
 
 
 class Parts(models.Model):
-    name = models.CharField(max_length=255, verbose_name='Название раздела:')
+    name = models.CharField(max_length=255, verbose_name='Название раздела:', blank=True)
     type = models.ForeignKey('Type',
                              related_name='parts',
                              on_delete=models.CASCADE)
@@ -130,4 +131,22 @@ class ResultsJson(models.Model):
                                on_delete=models.CASCADE)
     value = models.JSONField()
     date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+
+
+#----------------------------------------------------------------------------------
+class Product(models.Model):
+    title = models.CharField(max_length=10)
+
+    def __str__(self):
+        return self.name
+
+class Image(models.Model):
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE,
+        )
+    name = models.CharField(max_length=5)
+
+    def __str__(self):
+        return self.name
 

@@ -20,5 +20,8 @@ urlpatterns = [
 
     path('settings/manage_types/<id>/<slug>/', views.TypesDetailView.as_view(), name='detail_type'),
     # path('settings/create_type/', views.CreateGameType.as_view(), name='create_game_type') # endpoint to create custom game type.
+
+    path('settings/manage_types/order/', views.test_order, name='test_order'),
+
 ]
 
