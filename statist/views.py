@@ -84,33 +84,32 @@ class CountStatisticView(PermissionRequiredMixin, TemplateView):
     permission_required = 'statist.can_add_new_game'
 
     def get(self, request: HttpRequest, *args, **kwargs):
-        print(self.kwargs)
-        print(request.POST)
+
         # game_type = int(self.kwargs.get('type-select'))
-        # halfs = get_object_or_404(Type, id=game_type).halfs
-        # print(f'{halfs=}')
+
+
         game_id = self.kwargs.get('game_id')
-        d = get_object_or_404(Game, id=game_id).type.id
-        print(d)
-        # game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
-        players = Players.objects.all()
-        action_by_category = {
-            '1': [],
-            '2': []
-        }
-        actions = Actions.objects.filter(type=1)
-        for i in actions:
-            if i.name not in seldom_actions:
-                action_by_category['1'].append(i)
-            else:
-                action_by_category['2'].append(i)
+        type_game = get_object_or_404(Game, id=game_id).type
+        type_game_id = type_game.id
+
+        halfs = get_object_or_404(Type, id=type_game_id).halfs
+        halfs = [i + 1 for i in range(halfs)]
+
+        game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
+        players = Players.objects.all() # add filter to get players belong current user
+
+        action_parts = Parts.objects.filter(type_id=type_game_id)
+        actions = Actions.objects.filter(type=type_game_id)
+
+
         return self.render_to_response(
             context={
-                'actions_by_category': action_by_category,
+                'action_parts': action_parts,
                 'players': players,
                 'game_id': game_id,
                 'actions': actions,
-                'statistic_type': 1})
+                'statistic_type': type_game,
+                'halfs': halfs})
 
 
 

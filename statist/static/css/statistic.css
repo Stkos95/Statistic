@@ -35,3 +35,13 @@ span {
   padding:0;
   margin:10px 0;
 }
+
+.field > input {
+    display: block;
+
+}
+
+.field {
+        box-sizing: content-box;
+        width: auto;
+}

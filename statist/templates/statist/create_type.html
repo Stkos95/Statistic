@@ -17,9 +17,9 @@ html5sortable.min.js"></script>
     {% if formset_create %}
         <div id="type">
             {{ form_create}}
-
-
         </div>
+    {% else %}
+    <h3>Редактирование статистики {{ current_type.name}}</h3>
     {% endif %}
     {% csrf_token %}
 {{ formset.management_form }}

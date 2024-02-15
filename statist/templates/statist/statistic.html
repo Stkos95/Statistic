@@ -8,7 +8,6 @@
 
 <h1>Подсчет статистики:</h1>
 
-{{user}}
 
 <div id="players">
     <h3>Игроки:</h3>
@@ -29,30 +28,6 @@
 
 <iframe src="https://vk.com/video_ext.php?oid=-97534157&id=456240216&hd=2" width="853" height="480" allow="autoplay; encrypted-media; fullscreen; picture-in-picture;"
         frameborder="0" allowfullscreen></iframe>
-<div id="defend-actions">
-
-    <table>
-
-
-        {% for act in actions_by_category.2 %}
-        <tr>
-            <th class="head">
-                {{ act }}
-            </th>
-            <td class="field"><input data-half="1" class="success" name="{{ act.slug }}-success" type="number"
-                                     value="0">
-                <input class="fail" name="{{ act.slug }}-fail" type="number" value="0">
-            </td>
-            {% endfor %}
-
-        </tr>
-
-
-    </table>
-</div>
-
-
-
 
 {% for current_half in halfs %}
     <span class="half" onclick="halfSelect(this)" data-half="{{ current_half }}">{{ current_half }} Тайм</span>
@@ -66,36 +41,35 @@
     <label class="tgl-btn" data-tg-off="OFF" data-tg-on="ON" for="cb3-8"></label>
 </div>
 
-
 {% csrf_token %}
 
-
-<div id="atack-actions">
-    <table>
-
+<div id="actions">
+    {% for part in action_parts %}
+    {{ part.name }}
+    <table class="action_part">
         <tr>
-            {% for act in actions_by_category.1 %}
-            <th class="head">
-                {{ act }}
-            </th>
-            {% endfor %}
+        {% for act in part.actions.all %}
+        <th class="head">
+            {{ act }}
+        </th>
+        {% endfor %}
         </tr>
-
-
         <tr>
-            {% for act in actions_by_category.1 %}
-            <td class="field"><input data-half="1" class="success" name="{{ act.slug }}-success" type="number"
+            {% for act in part.actions.all %}
+            <td class="field">
+                <input data-half="1" class="success" name="{{ act.slug }}-success" type="number"
                                      value="0">
                 <input class="fail" name="{{ act.slug }}-fail" type="number" value="0">
             </td>
             {% endfor %}
-
         </tr>
-
     </table>
+    {% endfor %}
+
 </div>
 
-<input type="hidden" name="statistic_type" value="{{ statistic_type }}">
+
+<input type="hidden" name="statistic_type" value="{{ statistic_type.id }}">
 <input type="hidden" name="game_id" value="{{ game_id }}">
 <p>You have watched: {{ request.session.video_stopped }}</p>
 
@@ -142,6 +116,7 @@
         'game_id': gameId
     }
     sendAjax(url, body).then(response => response.json()).then(data => {
+        console.log(data)
         const players = data['players'];
         const PlayersDiv = document.querySelector('#players');
         const select = document.querySelector('#player-select');
