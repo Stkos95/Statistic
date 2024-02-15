@@ -6,7 +6,7 @@ from django import forms
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import JsonResponse, HttpRequest, HttpResponse
 from django.urls import reverse
-from django.views.generic import FormView, ListView, DetailView
+from django.views.generic import FormView, ListView, DetailView, CreateView
 from django.views.generic.base import TemplateView
 from django.conf import settings
 from django.shortcuts import redirect, get_object_or_404, render
@@ -325,7 +325,9 @@ def error_forbidden_view(request, exception):
 #=========================================================
 from django.forms.models import BaseInlineFormSet
 from django.forms import inlineformset_factory, HiddenInput, ValidationError
-from .forms import PartsForm
+from .forms import PartsForm, CreateTypeGame
+
+
 
 
 class BaseTypeFormset(BaseInlineFormSet):
@@ -352,17 +354,19 @@ class BaseTypeFormset(BaseInlineFormSet):
     #
     #     return result
 
-    # def clean(self):
-    #     print(dir(self))
-    #     for form in self.forms:
-    #         for nested_form in form.nested:
-    #         # print(form)
-    #             if nested_form.is_valid():
-    #
-    #                 name = nested_form.cleaned_data.get('name', None)
-    #
-    #                 if not name:
-    #                     raise ValidationError("Заполните или удалите пустые поля 'Действие'.")
+    def clean(self):
+        for form in self.forms:
+
+            for nested_form in form.nested:
+
+                if nested_form.is_valid():
+                    # nested_form.non_field_errors()
+                    # nested_form.add_error()
+                    name = nested_form.cleaned_data.get('name', None)
+                    if not name:
+
+                        raise ValidationError("Заполните или удалите пустые поля 'Действие'.")
+
 
 
     def save(self, commit=True):
@@ -378,7 +382,7 @@ class BasePartFormset(BaseInlineFormSet):
     deletion_widget = HiddenInput
 
 TypeFormset = inlineformset_factory(Type, Parts, fields=['name',], formset=BaseTypeFormset, extra=0, can_delete=False, can_order=True)
-PartsFormset = inlineformset_factory(Parts, Actions, fields=['name'], min_num=1, formset=BasePartFormset, extra=0, can_delete=True, can_order=True, validate_min=True)
+PartsFormset = inlineformset_factory(Parts, Actions, fields=['name'], min_num=1, formset=BasePartFormset, extra=0, can_delete=True, can_order=True)
 
 
 
@@ -389,27 +393,46 @@ class TypesManageView(ListView):
         return Type.objects.filter(user=self.request.user)
 
 
+# class TypesCreateView(CreateView):
+#     model = Type
+#
+
+
 class TypesDetailView(TemplateView):
     template_name = 'statist/create_type.html'
 
     def get(self, request, *args, **kwargs):
-        current_type = get_object_or_404(Type, pk=self.kwargs['id'])
+        current_type = None
+        form_create = False
+        if 'id' in self.kwargs:
+            current_type = get_object_or_404(Type, pk=self.kwargs['id'])
+        else:
+                form_create = CreateTypeGame(prefix='type') # ОСТАНОВИЛСЯ тут, дальше, в случае создания типа, нужно создать тип, а затем добавлять в бд разделы.
         formset = TypeFormset(instance=current_type)
 
-        context = self.get_context_data(**kwargs)
+        context = dict()
+        context['form_create'] = form_create
         context['formset'] = formset
         context['current_type'] = current_type
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        current_type = get_object_or_404(Type, pk=self.kwargs['id'])
+        # print(request.POST)
+        current_type = None
+        form_create = CreateTypeGame(request.POST, prefix='type')
+        if form_create.is_valid():
+            current_type = form_create.save(commit=False)
+            current_type.user_id = request.user.id
+            current_type.save()
+
+        if not current_type:
+            current_type = get_object_or_404(Type, pk=self.kwargs['id'])
+
+        print(current_type)
         form1 = TypeFormset(request.POST, instance=current_type)
-        print(form1.non_form_errors())
         if form1.is_valid():
-            print('valid')
             z = form1.save()
         else:
-            print('here))')
             context = self.get_context_data(**kwargs)
             context['formset'] = form1
             context['current_type'] = current_type

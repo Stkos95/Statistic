@@ -44,6 +44,11 @@ class Type(models.Model):
     halfs = models.IntegerField(default=2)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, blank=True, null=True)
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
     def get_absolute_url(self):
         return reverse('statistic:detail_type', args=[self.id, self.slug])
 

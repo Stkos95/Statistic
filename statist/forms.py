@@ -1,5 +1,7 @@
 from django import forms
-from .models import Actions, Players
+from django.core.exceptions import ValidationError
+
+from .models import Actions, Players, Type
 from django.contrib.auth import get_user_model
 
 class TestForm(forms.Form):
@@ -33,10 +35,47 @@ class PartsForm(forms.ModelForm):
         fields = ['name', 'type']
 
 
+class CreateTypeGame(forms.ModelForm):
+
+    class Meta:
+        model = Type
+        fields = ['name', 'halfs']
+
+
 #
-# class GameTypeCreationForm(forms.Form):
-#     name = forms.CharField(max_length=255, label='Группа действий:')
-#
-#
+class GameTypeCreationForm(forms.ModelForm):
+    # name = forms.CharField(max_length=255, label='Группа действий:')
+
+    class Meta:
+        model = Actions
+        fields = '__all__'
+
+        # widgets = {
+        #     'name': forms.TextInput(
+        #         attrs={
+        #             'required': 'true'
+        #         }
+        #     ),
+        #
+        # }
+
+    # def clean(self):
+    #     name = self.cleaned_data.get('name', None)
+    #     if not name:
+    #         print('not a name')
+    #
+    # def clean_name(self):
+    #     name = self.cleaned_data.get('name', None)
+    #     print(f'{name=}')
+    #     if not name:
+    #         print('not name')
+
+
+
+    # def add_error(self, field, error):
+
+
+
+
 
 
