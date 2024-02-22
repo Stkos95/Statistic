@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>{% block title %}My ToDoApp{% endblock %}</title>
+        <link href="{% static 'css/base.css' %}" rel="stylesheet">
+        <link href="{% static 'css/statistic.css' %}" rel="stylesheet">
+<!--        <script src="../static/js/index.js"></script>-->
+    </head>
+    <body>
+    <div id="header">
+        <a id="logo" href="{% url 'statistic:initial' %}">
+            <img id="logo_img"  src="{% static 'img/logo_1.png' %}">
+        </a>
+            <h1 id="name">My ToDoApp</h1>
+            <ul class="menu">
+
+
+                        <li {% if section == "about" %}class="selected"{% endif %}'>
+                        <a href="{% url 'statistic:initial' %}">Statistic</a>
+
+                    </li>
+                    <li {% if section == "about" %}class="selected"{% endif %}'>
+<!--     'account:about' -->
+                        <a href="#">About</a>
+                    </li>
+                {% if request.user.is_authenticated %}
+                <li class="last">{{ user.username }} | <a href="{% url 'logout' %}">Выйти</a></li>
+                {% else %}
+                    <li class="last"><a href="{% url 'registration' %}">Регистрация</a> | <a href="{% url 'login' %}">Войти</a></li>
+                {% endif %}
+
+            </ul>
+
+
+
+
+    </div>
+    <a href="{% url 'statistic:initial' %}">test button</a>
+{% block content %}
+{% endblock %}
+
+    </body>
+
+</html>

@@ -65,15 +65,10 @@ class CreateTask(CreateView):
 
 def home(request):
     if request.user.is_authenticated:
-        view = Test1.as_view()
-        return view(request)
+        return redirect('tasks:schedule')
     else:
         return render(request, 'tasks/home.html')
 
-
-class Test1(View):
-    def get(self, request):
-        return HttpResponse('А теперь вы авторизованы! :)')
 
 
 class Test(ListView):
@@ -86,8 +81,8 @@ class Test(ListView):
     context_object_name = 'tasks'
     allow_empty = True
 
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+    # def get(self, request, *args, **kwargs):
+    #     return super().get(request, *args, **kwargs)
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -99,7 +94,6 @@ class Test(ListView):
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
-            print('hello')
             all_tasks = Task.objects.filter(user=self.request.user)
 
             category_slug = self.kwargs['slug']
@@ -116,7 +110,6 @@ class Test(ListView):
 
         else:
             all_tasks = Task.objects.all()
-            print('world')
 
         return all_tasks
 

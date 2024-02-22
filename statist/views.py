@@ -38,6 +38,12 @@ class InitView(PermissionRequiredMixin, FormView):
     # form_class = InitForm
     template_name = 'statist/initial.html'
     permission_required = 'statist.can_add_new_game'
+    permission_denied_message = 'nelzya'
+
+# class InitView(FormView):
+#     # form_class = InitForm
+#     template_name = 'statist/initial.html'
+#     # permission_required = 'statist.can_add_new_game'
 
     def get_types(self):
         return Type.objects.values_list('id', 'name').filter(Q(user=self.request.user.id) | Q(user=None))

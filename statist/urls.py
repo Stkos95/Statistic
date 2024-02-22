@@ -6,7 +6,7 @@ from . import views
 app_name = 'statistic'
 
 urlpatterns = [
-    # path('', views.PlayersView.as_view(), name='home'),
+
     path('', views.InitView.as_view(), name='initial'),
     path('pl/', views.CountStatisticView.as_view(), name='count'),
     path('pl/<game_id>/', views.CountStatisticView.as_view(), name='count_existed'),

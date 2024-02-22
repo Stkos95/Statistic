@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+
+
+{% block content %}
+<h1>Это ваша домашняя страница.</h1>
+<h2>Пока доступно только посчитать статистику.</h2>
+<a href="{% url 'statistic:initial' %}">Подсчет статистики...</a>
+{% endblock %}

@@ -16,7 +16,6 @@ def is_in_group(user, group):
     try:
         gr = Group.objects.get(name=group)
     except Group.DoesNotExist:
-        print('dont')
         return False
 
     return gr in user.groups.all()

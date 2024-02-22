@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+
+{% if user.is_authenticated %}
+    <h2>Вы уже зарегистрированы.</h2>
+{% else %}
+    <div class="error_field">{{ form.non_field_errors }}</div>
+        <h1>Регистрация:</h1>
+        <form class="my-form" method="post">
+            {% csrf_token %}
+            {% for f in form %}
+            <p><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}</p>
+            <div class="form-error">
+                {{ f.errors }}
+            </div>
+            {% endfor %}
+            <input type="submit" value="Зарегистрироваться">
+        </form>
+{% endif %}
+{% endblock %}

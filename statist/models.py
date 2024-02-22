@@ -72,6 +72,11 @@ class Game(models.Model):
                              on_delete=models.CASCADE,
                              null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        return super().save(*args, **kwargs)
+
     def get_absolute_url(self):
         return reverse('statistic:count_existed', args=[self.id])
 
