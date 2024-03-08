@@ -13,7 +13,14 @@ from django.shortcuts import redirect, get_object_or_404, render
 from django.db.models import Q
 
 from .forms import InitForm
-from .models import Actions, Players, Game, Type, Parts
+
+
+from django.forms.models import BaseInlineFormSet
+from django.forms import inlineformset_factory, HiddenInput, ValidationError
+# from .forms import PartsForm, CreateTypeGame
+from .key_schema import KeySchema
+from .models import Actions, Players, Game, Type, Parts, RawResults, Teams
+
 from .count import accumulate_statistic
 from .statistic_to_image import OurTeamImage
 from .tasks import make_and_send_image, add_result_to_db
@@ -31,6 +38,8 @@ class MatchInfo:
     game: Game
     players: list
     actions: list
+    is_new: bool = False
+
 
 
 
@@ -38,19 +47,15 @@ class InitView(PermissionRequiredMixin, FormView):
     # form_class = InitForm
     template_name = 'statist/initial.html'
     permission_required = 'statist.can_add_new_game'
-    permission_denied_message = 'nelzya'
 
-# class InitView(FormView):
-#     # form_class = InitForm
-#     template_name = 'statist/initial.html'
-#     # permission_required = 'statist.can_add_new_game'
+
 
     def get_types(self):
         return Type.objects.values_list('id', 'name').filter(Q(user=self.request.user.id) | Q(user=None))
 
     def get_form(self, form_class=InitForm):
-        form = InitForm()
-        form.fields['test_name'] = forms.ChoiceField(choices=self.get_types())
+
+        form = InitForm(request=self.request)
         return form
 
     def get_context_data(self, **kwargs):
@@ -65,7 +70,9 @@ class InitView(PermissionRequiredMixin, FormView):
 
     def post(self, request, *args, **kwargs):
         print(request.POST)
-        form = InitForm(request.POST)
+
+        form = InitForm(data=request.POST, request=request)
+
         if form.is_valid():
             cd = form.cleaned_data
             tt = cd['test_name']
@@ -74,10 +81,11 @@ class InitView(PermissionRequiredMixin, FormView):
                 date=cd['date'],
                 user=request.user,
                 url=cd['url'],
-                type_id=cd['test_name']
+
+                type_id=cd['test_name'],
+                team_id=cd['teams']
             )
             game.save()
-            # return redirect('statistic:count_existed', game.id)
             return redirect(game, game.id)
         context = self.get_context_data()
         return render(request, 'statist/initial.html', context=context)
@@ -90,29 +98,24 @@ class CountStatisticView(PermissionRequiredMixin, TemplateView):
     permission_required = 'statist.can_add_new_game'
 
     def get(self, request: HttpRequest, *args, **kwargs):
-
-        # game_type = int(self.kwargs.get('type-select'))
-
-
         game_id = self.kwargs.get('game_id')
-        type_game = get_object_or_404(Game, id=game_id).type
-        type_game_id = type_game.id
-
-        halfs = get_object_or_404(Type, id=type_game_id).halfs
-        halfs = [i + 1 for i in range(halfs)]
-
         game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
-        players = Players.objects.all() # add filter to get players belong current user
-
-        action_parts = Parts.objects.filter(type_id=type_game_id)
-        actions = Actions.objects.filter(type=type_game_id)
-
+        type_game = game.type
+        halfs = [i + 1 for i in range(type_game.halfs)]
+        players = game.team.players_set.all()
+        action_parts = type_game.parts.all()
+        actions = type_game.actions.all()
+        keys_current_game = r.keys(f'{game_id}:*')
+        if keys_current_game:
+            prepopulated_players = map(lambda x: x.split(':')[1], keys_current_game)
+            print(prepopulated_players)
 
         return self.render_to_response(
             context={
                 'action_parts': action_parts,
                 'players': players,
                 'game_id': game_id,
+                'game': game,
                 'actions': actions,
                 'statistic_type': type_game,
                 'halfs': halfs})
@@ -124,13 +127,11 @@ def get_player(pl, players):
 
 
 def collect_value(key):
-    half = key.split(':')[2]
     data = r.hgetall(key)
-    return half, data
+    return data
 
 
 def approriate_view(data, action):
-
     value_fail = int(data[f'{action.slug}-{"fail"}'])
     value_success = int(data[f'{action.slug}-{"success"}'])
     total = value_fail + value_success
@@ -138,21 +139,21 @@ def approriate_view(data, action):
         value_percent = value_success / total * 100
     except ZeroDivisionError:
         value_percent = 0
-    # value['total'] = sum(int(value[i]) for i in status)
-
     return value_success, value_fail, value_percent
 
 
-def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
+def get_player_info(player_keys: list, player_obj: Players, match_info: MatchInfo):
     new_player = {}
     itog_dict = {}
     previous_half = 0
-    player_keys = [key for key in game_keys if f':{player_obj.id}:' in key]
-    first = True if len(player_keys) > 1 else False
     for key in player_keys:
         actions = {}
-        half_data = {}
-        half, data = collect_value(key)
+        half = key.split(':')[2]
+        if match_info.is_new:
+            data = collect_value(key)
+            add_to_db_task(player=player_obj, game=match_info.game, half=half, value=data)
+        else:
+            data = RawResults.objects.get(game=match_info.game, player=player_obj, half=half).value_js
         for action in match_info.actions:
             # if action.name not in actions:
 
@@ -173,92 +174,126 @@ def get_player_info(game_keys, player_obj: Players, match_info: MatchInfo):
                 itog_dict[action.name] = {'success': value_success, 'fail': value_fail, 'percent': value_percent}
 
         previous_half = half
-        # для добавления значений в бд сделать чтобы можно было пробегаться по таймам (из бд) и сохранять для каждого игрока.
+        new_player[half] = actions
+    new_player['itog'] = itog_dict
 
-        half_data[player_obj.name] = actions
-        new_player[half] = half_data
-    new_player['itog'] = {player_obj.name: itog_dict}
 
     return new_player
 
 
 from pprint import pprint
 
+
+def process_raw_result_data(player_obj, match_info):
+
+
+    if match_info.is_new:
+        add_to_db_task(player_obj, match_info)
+
+
+def add_to_db_task(player, game, half, value):
+    RawResults.objects.create(
+        player=player,
+        game=game,
+        half=half,
+        value_js=value
+    )
+
+
 class ResultStatisticView(PermissionRequiredMixin, TemplateView):
     permission_required = 'statist.can_add_new_game'
     template_name = 'statist/success.html'
-    status = ('success', 'fail')
 
-    def get(self, request, *args, **kwargs):
-        game_id = self.kwargs.get('game_id')
-        game = get_object_or_404(Game, pk=game_id)
+
+
+    def post(self, request, *args, **kwargs):
+        print(request.POST)
+        game = get_object_or_404(Game, pk=self.kwargs.get('game_id'))
         res = {}
-        # add half to Game model to store amount of halfs and put it to match info
-        result = dict(match={'match_name': game.name, 'match_date': game.date, }, data=dict())
-        players = Players.objects.all() # ?
-        actions = Actions.objects.all() # ?
+        players = game.team.players_set.all() # ?
+        print(players)
         match_info = MatchInfo(
             game=game,
             players=players,
-            actions=actions
+            actions=game.type.actions.all(),
+            is_new=True
         )
-
         game_keys = r.keys(f'{game.id}:*')
-        players_id_list = set([id_.split(':')[1] for id_ in game_keys])
-        halfs_list = set([id_.split(':')[2] for id_ in game_keys]) # halfs get from db models
-        halfs_list = list(halfs_list)
-        halfs = {}
+
+        players_id_list = request.POST.getlist('players[]')
+        halfs_list = [i + 1 for i in range(game.type.halfs)]
+
         for player_id in players_id_list:
-            player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
-            new_player = get_player_info(game_keys, player_obj, match_info)
-            print(f'{new_player=}')
-            # res |= new_player
+            player_keys = [k for k in game_keys if f':{player_id}:' in k]
+            player_obj = [i for i in players if i.id == int(player_id)][0]
+            new_player_data = get_player_info(player_keys, player_obj, match_info)
+
             for h in halfs_list + ['itog']:
                 if h not in res:
                     res[h] = {}
-                res[h].update(new_player[h])
-        print(res)
+                res[h].update({player_obj.name: new_player_data[str(h)]})
 
-
-
-
-
-        # for half in halfs_list:
-        #     half_data = {}
-        #
-        #     for player_id in players_id_list:
-        #         player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
-        #         new_player = get_player_info(game_keys, player_obj, match_info)
-        #         half_data.update(new_player)
-        #
-        #     result['data'].update({half: half_data})
-
-
-
-
-        # for player_id in players_id_list:
-        #     player_obj = [i for i in match_info.players if i.id == int(player_id)][0]
-        #     new_player = get_player_info(game_keys, player_obj, match_info)
-        #     result['players'].update(new_player)
-        # print(result)
 
         # for player in result['players']:
         #
         #     add_result_to_db.delay(player, match_info.game.id)
-            # d = accumulate_statistic(player['actions'])
-            # players_result_actions[player['name']] = d
-            # make_and_send_image.delay(game.name, game.date, player.get('name'), d)
-        r.delete(*game_keys)
+        #     d = accumulate_statistic(player['actions'])
+        #     players_result_actions[player['name']] = d
+        #     make_and_send_image.delay(game.name, game.date, player.get('name'), d)
+        # r.delete(*game_keys)
+
         game.finished = True
         game.save()
         return self.render_to_response(context={
-            'match_name': result['match']['match_name'],
-            'match_date': result['match']['match_date'],
-            'players': result['players'],
-            'actions': actions
+            'game': game,
+            'players': players,
+            'result': res,
+            'is_new': True
+
+        })
+
+    def get(self, request, *args, **kwargs):
+        game_id = self.kwargs.get('game_id', None)
+        player_id = self.kwargs.get('player_id', None)
+        game = get_object_or_404(Game, pk=game_id)
+        results = game.results.all().order_by('player')
+        halfs_list = list(game.results.values_list('half', flat=True).distinct())
+
+        players = Players.objects.all()  # ??????????????????????????????
+
+        match_info = MatchInfo(
+            game=game,
+            players=players,
+            actions=game.type.actions.all()
+        )
+
+        if player_id:
+            results = results.filter(player_id=player_id)
+        res = {}
+        for player_id in results.values_list('player_id', flat=True).distinct():
+            player_data = results.filter(player_id=player_id)
+            player_keys = [KeySchema().hash_match_player_half(game_id, player_id, half)
+                    for half in halfs_list]
+
+            new_player_data = get_player_info(player_keys, player_data.first().player, match_info)
+
+            for h in halfs_list + ['itog']:
+                if h not in res:
+                    res[h] = {}
+                res[h].update({player_data.first().player: new_player_data[str(h)]})
+
+        return self.render_to_response(context={
+            'game': game,
+            'players': players,
+            'actions': game.type.actions.all(),
+            'result': res
         })
 
 
+
+
+
+#============================ views for JS ==========================================
 
 def get_any_data(request, *args):
     data = json.load(request)
@@ -270,9 +305,13 @@ def get_any_data(request, *args):
 def initial_players(request):
     data = json.load(request)
     game_id = data.get('game_id')
-    keys = (f'{game_id}:{data["player_id"]}:1', f'{game_id}:{data["player_id"]}:2')
+    game_type = Game.objects.get(pk=game_id).type
+    actions = game_type.actions.all() # Возможно сделать, чтобы получать список действий из бд, а не из запроса.
+    keys = [KeySchema().hash_match_player_half(game_id, data['player_id'], half) for half in range(1, game_type.halfs + 1)]
 
     mapping = {action: 0 for action in data.get('actions')}
+    # mapping = {action: 0 for action in data.get('actions')}
+
     for half, key in enumerate(keys, start=1):
         data_half = r.hgetall(key)
         if data_half:
@@ -283,18 +322,23 @@ def initial_players(request):
 
 
 def count_statistic(request):
-    half, player_id, action, game_id = get_any_data(request, 'half', 'player_id', 'action', 'game_id')
-    key = f'{game_id}:{player_id}:{half}'
-    r.hincrby(key, action, 1)
-    new_value = r.hget(key, action)
 
+    data = json.loads(request.body)
+    half, player_id, action, game_id = get_any_data(request, 'half', 'player_id', 'action', 'game_id')
+
+    key = KeySchema().hash_match_player_half(game_id, player_id, half)
+    if 'value' in data.keys():
+        new_value = data.get('value')
+        r.hset(key, action, new_value)
+    else:
+        new_value = r.hincrby(key, action, 1)
     return JsonResponse({'response': 'ok',
                          'value': new_value})
 
 
 def get_player_data(request):
     half, player_id, game_id = get_any_data(request, 'half', 'player_id', 'game_id')
-    key = f'{game_id}:{player_id}:{half}'
+    key = KeySchema().hash_match_player_half(game_id, player_id, half)
     res = r.hgetall(key)
     response = {
         'status': 'ok',
@@ -313,7 +357,7 @@ def get_prepopulated_players(request):
     data = json.load(request)
     game_id = data.get('game_id', None)
     d = set(map(lambda x: x.split(':')[1], r.keys(f'{game_id}:*')))
-    return JsonResponse({'status': 'ok',
+    return JsonResponse({'status': 'Ok',
                          'players': [*d]})
 
 
@@ -326,128 +370,114 @@ def error_forbidden_view(request, exception):
     content = loader.render_to_string('errors/error403.html', {}, request)
     return HttpResponseForbidden(content=content)
 
-
-#=========================================================
-from django.forms.models import BaseInlineFormSet
-from django.forms import inlineformset_factory, HiddenInput, ValidationError
-from .forms import PartsForm, CreateTypeGame
-
-
-
-
-class BaseTypeFormset(BaseInlineFormSet):
-    ordering_widget = HiddenInput
-
-    def add_fields(self, form, index):
-        super().add_fields(form, index)
-
-        form.nested = PartsFormset(
-            instance=form.instance,
-            data=form.data if form.is_bound else None,
-            files=form.files if form.is_bound else None,
-            prefix='parts-%s-%s' % (
-                form.prefix,
-                PartsFormset.get_default_prefix()),
-        )
-
-    # def is_valid(self):
-    #     result = super().is_valid()
-    #     if self.is_bound:
-    #         for form in self.forms:
-    #             if hasattr(form, 'nested'):
-    #                 result = result and form.nested.is_valid()
-    #
-    #     return result
-
-    def clean(self):
-        for form in self.forms:
-
-            for nested_form in form.nested:
-
-                if nested_form.is_valid():
-                    # nested_form.non_field_errors()
-                    # nested_form.add_error()
-                    name = nested_form.cleaned_data.get('name', None)
-                    if not name:
-
-                        raise ValidationError("Заполните или удалите пустые поля 'Действие'.")
-
-
-
-    def save(self, commit=True):
-        result = super().save(commit=commit)
-        for form in self.forms:
-            if hasattr(form, 'nested'):
-                if not self._should_delete_form(form):
-                    form.nested.save(commit=commit)
-        return result
-
-class BasePartFormset(BaseInlineFormSet):
-    ordering_widget = HiddenInput
-    deletion_widget = HiddenInput
-
-TypeFormset = inlineformset_factory(Type, Parts, fields=['name',], formset=BaseTypeFormset, extra=0, can_delete=False, can_order=True)
-PartsFormset = inlineformset_factory(Parts, Actions, fields=['name'], min_num=1, formset=BasePartFormset, extra=0, can_delete=True, can_order=True)
-
-
-
-class TypesManageView(ListView):
-    model = Type
-
-    def get_queryset(self):
-        return Type.objects.filter(user=self.request.user)
-
-
-# class TypesCreateView(CreateView):
+#========================================================= manage game types (create) =======================
+# class BaseTypeFormset(BaseInlineFormSet):
+#     ordering_widget = HiddenInput
+#
+#     def add_fields(self, form, index):
+#         super().add_fields(form, index)
+#
+#         form.nested = PartsFormset(
+#             instance=form.instance,
+#             data=form.data if form.is_bound else None,
+#             files=form.files if form.is_bound else None,
+#             prefix='parts-%s-%s' % (
+#                 form.prefix,
+#                 PartsFormset.get_default_prefix()),
+#         )
+#
+#     def clean(self):
+#         for form in self.forms:
+#
+#             for nested_form in form.nested:
+#
+#                 if nested_form.is_valid():
+#                     # nested_form.non_field_errors()
+#                     # nested_form.add_error()
+#                     name = nested_form.cleaned_data.get('name', None)
+#                     if not name:
+#
+#                         raise ValidationError("Заполните или удалите пустые поля 'Действие'.")
+#
+#
+#
+#     def save(self, commit=True):
+#         r = []
+#         result = super().save(commit=commit)
+#         for form in self.forms:
+#             if hasattr(form, 'nested'):
+#                 if not self._should_delete_form(form):
+#                     zz =form.nested.save(commit=False)
+#                     r.extend(zz)
+#         return r
+#
+# class BasePartFormset(BaseInlineFormSet):
+#     ordering_widget = HiddenInput
+#     deletion_widget = HiddenInput
+#
+# TypeFormset = inlineformset_factory(Type, Parts, fields=['name',], formset=BaseTypeFormset, extra=0, can_delete=False, can_order=True)
+# PartsFormset = inlineformset_factory(Parts, Actions, fields=['name'], min_num=1, formset=BasePartFormset, extra=0, can_delete=True, can_order=True)
+#
+#
+#
+# class TypesManageView(ListView):
 #     model = Type
 #
+#     def get_queryset(self):
+#         return Type.objects.filter(user=self.request.user)
+#
+#
+#
+#
+# class TypesDetailView(TemplateView):
+#     template_name = 'statist/create_type.html'
+#
+#     def get(self, request, *args, **kwargs):
+#         current_type = None
+#         form_create = False
+#         if 'id' in self.kwargs:
+#             current_type = get_object_or_404(Type, pk=self.kwargs['id'])
+#         else:
+#                 form_create = CreateTypeGame(prefix='type') # ОСТАНОВИЛСЯ тут, дальше, в случае создания типа, нужно создать тип, а затем добавлять в бд разделы.
+#         formset = TypeFormset(instance=current_type)
+#
+#         context = dict()
+#         context['form_create'] = form_create
+#         context['formset'] = formset
+#         context['current_type'] = current_type
+#         return self.render_to_response(context)
+#
+#     def post(self, request, *args, **kwargs):
+#         # print(request.POST)
+#         current_type = None
+#         form_create = CreateTypeGame(request.POST, prefix='type')
+#         if form_create.is_valid():
+#             current_type = form_create.save(commit=False)
+#             current_type.user_id = request.user.id
+#             current_type.save()
+#
+#         if not current_type:
+#             current_type = get_object_or_404(Type, pk=self.kwargs['id'])
+#
+#
+#         form1 = TypeFormset(request.POST, instance=current_type)
+#         if form1.is_valid():
+#             parts = form1.save()
+#             for action in parts:
+#                 action.type = current_type
+#                 action.save()
+#
+#         else:
+#             context = self.get_context_data(**kwargs)
+#             context['formset'] = form1
+#             context['current_type'] = current_type
+#         return self.render_to_response({})
+#
+#
+# def test_order(request):
+#     print('Пришло!!!')
+#     JsonResponse({'status': 'ok',})
 
-
-class TypesDetailView(TemplateView):
-    template_name = 'statist/create_type.html'
-
-    def get(self, request, *args, **kwargs):
-        current_type = None
-        form_create = False
-        if 'id' in self.kwargs:
-            current_type = get_object_or_404(Type, pk=self.kwargs['id'])
-        else:
-                form_create = CreateTypeGame(prefix='type') # ОСТАНОВИЛСЯ тут, дальше, в случае создания типа, нужно создать тип, а затем добавлять в бд разделы.
-        formset = TypeFormset(instance=current_type)
-
-        context = dict()
-        context['form_create'] = form_create
-        context['formset'] = formset
-        context['current_type'] = current_type
-        return self.render_to_response(context)
-
-    def post(self, request, *args, **kwargs):
-        # print(request.POST)
-        current_type = None
-        form_create = CreateTypeGame(request.POST, prefix='type')
-        if form_create.is_valid():
-            current_type = form_create.save(commit=False)
-            current_type.user_id = request.user.id
-            current_type.save()
-
-        if not current_type:
-            current_type = get_object_or_404(Type, pk=self.kwargs['id'])
-
-        print(current_type)
-        form1 = TypeFormset(request.POST, instance=current_type)
-        if form1.is_valid():
-            z = form1.save()
-        else:
-            context = self.get_context_data(**kwargs)
-            context['formset'] = form1
-            context['current_type'] = current_type
-            return self.render_to_response(context)
-        return self.render_to_response({})
-
-
-def test_order(request):
-    print('Пришло!!!')
-    JsonResponse({'status': 'ok',})
 
 
 

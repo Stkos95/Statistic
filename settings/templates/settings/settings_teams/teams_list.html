@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+
+
+
+
+{% block content %}
+<h1>Ваши команды:</h1>
+<ul>
+  {% for team in teams %}
+  <li>
+  <a href="{{ team.get_absolute_url }}">{{ team.name }}</a>
+
+
+  </li>
+  {% endfor %}
+</ul>
+
+      <hr>
+      <a href="{% url 'settings:create_team' %}">Создать команду</a>
+
+
+{% endblock %}

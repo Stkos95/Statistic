@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Список моих статистик: (переименовать)</h1>
+{% if object_list %}
+{% for type in object_list %}
+  <a href="{{ type.get_absolute_url }}">{{ type.name }}</a>
+
+{% endfor %}
+{% else %}
+<h3>Вы еще не создали ни одной статистики. Для создания статистики нажмите на кнопку ниже:</h3>
+
+
+{% endif %}
+<a href="{% url 'settings:create_type' %}">Создать тип статистики.</a>
+
+{% endblock %}

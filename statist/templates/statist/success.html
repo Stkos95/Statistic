@@ -1,92 +1,68 @@
-<!DOCTYPE html>
 
-<html>
-    <head>
-        <meta charset="utf-8">
-
-
-
-    </head>
-
-    <body>
-
-        <h1>Статистика успешно посчитана!</h1>
-
-        <h2>Общая информация по игрокам:</h2>
-
-        <table>
-            <tr>
-                {% for action in actions %}
-                <th>
-                    action.name
-                </th>
-                {% endfor %}
-            </tr>
-            {% for player in players %}
-            <tr>
-                <th>
-                    {{ player }}
-                </th>
-                {% for act in player.actions %}
-                <td>
-                    act
-                </td>
-                {% endfor %}
-            </tr>
-            {% endfor %}
+{% extends 'base.html' %}
+>>>>>>> 4acb776 (After deletion)
 
 
 
 
 
+{% block content %}
+{% if is_new %}
+<h1>Статистика посчитана успешно!</h1>
+{% else %}
+<h1>Статистика для игры {{ game.name }}</h1>
+{% endif %}
+
+<h4>В ячейках указано значение в формате "успешно/ошибок/процент успешных"</h4>
+{% for half in result %}
+    <span>{{ half }}</span>
+{% endfor %}
 
 
-        </table>
+{% for half, player_data in result.items %}
+<!--{{ half }}-->
+<table>
+    <tr>
+        <th></th>
+        {% for action in actions %}
 
-    <table>
-        <tr>
-            {% for action in actions%}
             <th>
                 {{ action }}
             </th>
-            {% endfor %}
-        </tr>
-        {% for player, player_value in players.items %}
-            <tr>
-                <th>
-                    {{ player }}
-                </th>
-                {% for act in player_value
-
-            </tr>
-
-
         {% endfor %}
-        <>
-    </table>
+    </tr>
+    {% for  player, data in player_data.items %}
+        <tr>
+            <th>
+                {{ player }}
+            </th>
+            {% for act, value in data.items %}
+                <td class="value">
+                    {{ value.success}}/{{ value.fail }}/{{ value.percent }}%
+                </td>
 
-    <hr>
-    {% for player, val in players.items %}
-    <p>{{ player }}</p>
-    <p>{{ val }}</p>
+
+            {% endfor %}
+
+
+        </tr>
+
     {% endfor %}
 
 
-
-    </body>
-
-<script>
-    console.log('{{players}}')
-    console.log('opppp')
-
-
-
-</script>
-
-</html>
-
-
+</table>
+{% endfor %}
+<h4>Список игроков команды:</h4>
+<div id="players-itog">
+    <ul>
+        {% for player in players %}
+        <li>
+           {{ player }}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
 
 
-
+{% endblock %}
 

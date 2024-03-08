@@ -2,7 +2,10 @@ from django.db import models
 from django.utils import timezone
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from django.utils.text import slugify
+
+from django.utils.text import slugify as django_slugify
+from pytils.translit import slugify
+
 
 class Actions(models.Model):
     name = models.CharField(max_length=50, verbose_name='Действие:')
@@ -28,6 +31,7 @@ class Actions(models.Model):
         return self.name
 
 
+
 class Parts(models.Model):
     name = models.CharField(max_length=255, verbose_name='Название раздела:', blank=True)
     type = models.ForeignKey('Type',
@@ -46,11 +50,11 @@ class Type(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = django_slugify(self.name)
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('statistic:detail_type', args=[self.id, self.slug])
+        return reverse('settings:detail_type', args=[self.id, self.slug])
 
     def __str__(self):
         return self.name
@@ -72,9 +76,11 @@ class Game(models.Model):
                              on_delete=models.CASCADE,
                              null=True, blank=True)
 
+    team = models.ForeignKey('Teams', on_delete=models.CASCADE, related_name='games', blank=True, null=True)
+
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = django_slugify(self.name)
         return super().save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -86,14 +92,10 @@ class Game(models.Model):
         ]
 
 
-
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = django_slugify(self.name)
         super().save(*args, **kwargs)
-
-
-
 
     def __str__(self):
         return self.name
@@ -109,9 +111,22 @@ class Records(models.Model):
     value = models.IntegerField(null=True, blank=True)
 
 
+class Teams(models.Model):
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, verbose_name='Team name')
+
+    def get_absolute_url(self):
+        return reverse('settings:detail_team', args=[self.id])
+
+
+
+
+
 class Players(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, verbose_name='Player name')
     photo = models.ImageField(upload_to=f'players/', blank=True)
+    team = models.ForeignKey(Teams, on_delete=models.CASCADE, null=True, blank=True)
+    number = models.CharField(max_length=5, blank=True, null=True)
 
     class Meta:
         indexes = [
@@ -123,7 +138,10 @@ class Players(models.Model):
 
 class Results(models.Model):
     player = models.ForeignKey('Players',
-                               on_delete=models.CASCADE)
+
+                               on_delete=models.CASCADE,
+                               related_name='res')
+
     # game = models.ForeignKey('Game',
     #                          on_delete=models.CASCADE, blank=True)
     game = models.CharField(max_length=255)
@@ -142,21 +160,17 @@ class ResultsJson(models.Model):
     value = models.JSONField()
     date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
+    # time_to_count = models.TimeField(blank=True, null=True) Для того, чтобы посмотреть, сколько человек считал эту статистику,
+    # вычесть из времени добавления игры текущее время и результат занести
+
+class RawResults(models.Model):
+    player = models.ForeignKey('Players',
+                               on_delete=models.CASCADE,
+                                related_name='results')
+    game = models.ForeignKey('Game', on_delete=models.CASCADE,
+                             related_name='results')
+    half = models.IntegerField()
+    value_js = models.JSONField()
 
 
-#----------------------------------------------------------------------------------
-class Product(models.Model):
-    title = models.CharField(max_length=10)
-
-    def __str__(self):
-        return self.name
-
-class Image(models.Model):
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE,
-        )
-    name = models.CharField(max_length=5)
-
-    def __str__(self):
-        return self.name
 
