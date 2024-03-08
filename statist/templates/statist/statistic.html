@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block content %}
+<!--<script src="{% static 'js/index.js' %}"></script>-->
+<!--<script src="{% static 'js/plus-minus.js' %}"></script>-->
+
+<h1>Подсчет статистики:</h1>
+
+
+<div id="players">
+    <h3>Игроки:</h3>
+    <!--<div class="player" data-id="1"><span>Костя</span></div>-->
+    <!--<div class="player" data-id="1"><span>Костя</span></div>-->
+    <!--<div class="player" data-id="1"><span>Костя</span></div>-->
+    <!--<div class="player" data-id="1"><span>Костя</span></div>-->
+    <!--<div class="player" data-id="1"><span>Костя</span></div>-->
+</div>
+<div class="add-player">
+
+    <input type="button" id="add-player-button" value="Редактировать состав">
+</div>
+
+
+<!--<iframe data-status="stop" id="myiframe" width="1280" height="720"-->
+<!--        src="https://www.youtube.com/embed/jQqVZrYYd0Y?rel=0&enablejsapi=1"></iframe>-->
+
+<iframe src="https://vk.com/video_ext.php?oid=-97534157&id=456240216&hd=2" width="853" height="480" allow="autoplay; encrypted-media; fullscreen; picture-in-picture;"
+        frameborder="0" allowfullscreen></iframe>
+
+{% for current_half in halfs %}
+    <span class="half" onclick="halfSelect(this)" data-half="{{ current_half }}">{{ current_half }} Тайм</span>
+    <!--<span class="half selected" onclick="halfSelect(this)" data-half="1">1 Тайм</span>-->
+    <!--<span class="half" onclick="halfSelect(this)" data-half="2">2 Тайм</span>-->
+{% endfor %}
+
+
+<div class="checkbox-wrapper-8">
+    <input onclick="checkboxOn(this)" class="tgl tgl-skewed" id="cb3-8" type="checkbox"/>
+    <label class="tgl-btn" data-tg-off="OFF" data-tg-on="ON" for="cb3-8"></label>
+</div>
+
+{% csrf_token %}
+
+<div id="actions">
+    {% for part in action_parts %}
+    {{ part.name }}
+    <table class="action_part">
+        <tr>
+        {% for act in part.actions.all %}
+        <th class="head">
+            {{ act }}
+        </th>
+        {% endfor %}
+        </tr>
+        <tr>
+            {% for act in part.actions.all %}
+            <td class="field">
+                <input data-half="1" class="success" name="{{ act.slug }}-success" type="number"
+                                     value="0">
+                <input class="fail" name="{{ act.slug }}-fail" type="number" value="0">
+            </td>
+            {% endfor %}
+        </tr>
+    </table>
+    {% endfor %}
+
+</div>
+
+
+<input type="hidden" name="statistic_type" value="{{ statistic_type.id }}">
+<input type="hidden" name="game_id" value="{{ game_id }}">
+<p>You have watched: {{ request.session.video_stopped }}</p>
+
+<form action="{% url 'statistic:result' game_id %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Подтвердить">
+
+</form>
+
+
+<select name="player-select" id="player-select">
+    {% for player in players %}
+    <option value="{{player.id}}">{{player}}</option>
+    {% endfor %}
+</select>
+
+
+<script>
+
+    const form = document.forms[0]
+    form.onsubmit = (e) => {
+        const players = document.querySelectorAll('.player');
+        for (let player of players){
+            form.innerHTML += `<input type="hidden" name=players[] value="${player.dataset.id}">`
+
+        }
+        console.log(form)
+    }
+
+
+
+    const gameId = document.querySelector('[name="game_id"]').getAttribute('value');
+
+    // ------------------------------------YT script-----------------
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    var ytPlayer;
+
+    function onYouTubeIframeAPIReady() {
+        ytPlayer = new YT.Player('myiframe', {
+            height: '360',
+            width: '640',
+            videoId: 'M7lc1UVf-VE',
+        });
+    }
+
+    <!--    ---------------------------------- window.onload  ----------------- -->
+    checkboxOn()
+    const half = document.querySelector('.half')
+    halfSelect(half)
+
+    <!--    ---------------------------------- check players in db, if i have already added them, get list of players with values  ----------------- -->
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
+    const url = '{% url "statistic:get_players" %}';
+    const body = {
+        'X-CSRFToken': csrftoken,
+        'game_id': '{{ game.id }}'
+    }
+    sendAjax(url, body).then(response => response.json()).then(data => {
+        const players = data['players'];
+        const PlayersDiv = document.querySelector('#players');
+        const select = document.querySelector('#player-select');
+                for (let opt of select.options) {
+                    if (players.includes(opt.value.toString())) {
+                        let div = document.createElement('div');
+                        let playerSpan = document.createElement('span')
+                        let spanText = document.createTextNode(opt.text)
+                        playerSpan.appendChild(spanText)
+                        div.setAttribute('class', 'player');
+                        div.setAttribute('data-id', opt.value)
+                        choosePlayerToCount(div)
+                        div.appendChild(playerSpan)
+                        PlayersDiv.appendChild(div)
+
+                    }
+                        }})
+
+    let actions = document.querySelectorAll('input[type="number"]')
+
+
+    function sendAjax(url, body) {
+        let options = {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: JSON.stringify(body),
+            dataType: 'json',
+        }
+        return fetch(url, options)
+
+    }
+
+    function halfSelect(element) {
+
+        let buttons = document.querySelectorAll('.half')
+        let data = element.getAttribute('data-half');
+
+        for (let button of buttons) {
+            if (button.getAttribute('data-half') === data) {
+                button.classList.add('selected');
+
+            } else {
+                button.classList.remove('selected')
+            }
+        }
+        // const playerButton = document.querySelector('.player-selected').children[0]
+        // console.log(playerButton)
+
+        // playerButton.click()
+    }
+
+
+    // <!--    -------------------- add players to count statistic ------------------- -->
+    let count = 0
+    let players = document.querySelector('#players');
+
+    function confirmPlayer(event) {
+
+        let currentButton = event.target;
+        const select = currentButton.previousSibling;
+
+        const playerId = select.options[select.selectedIndex].value;
+        const playerName = select.options[select.selectedIndex].text;
+        let div = document.createElement('div');
+        let playerSpan = document.createElement('span')
+        choosePlayerToCount(div)
+        let spanText = document.createTextNode(`${playerName}`)
+        playerSpan.appendChild(spanText)
+        div.setAttribute('class', 'player');
+        div.setAttribute('data-id', playerId)
+
+        for (let p of players.children) {
+            p.getAttribute('data-id')
+            if (p.getAttribute('data-id') === playerId) {
+                alert('player already exists')
+                return false
+            }
+        }
+        count++
+        div.appendChild(playerSpan)
+        addCommentField(div)
+        addPlayerRemoveButton(div)
+        players.appendChild(div)
+
+    }
+
+    //---------------------------------------------------------------------
+
+    //------------------------------- function add field to choose a player, add button ready, add plus button--
+    function addCommentField(element) {
+        const comment = element.querySelector('span.comment-for-player');
+        const commentField = document.createElement('input');
+        commentField.setAttribute('type', 'input')
+        commentField.classList.add('comment-for-player')
+        if (comment) {
+            commentField.value = comment.innerText
+            comment.remove()
+        }
+        element.appendChild(commentField)
+    }
+
+    function removeCommentField(player) {
+        const commentField = player.querySelector('.comment-for-player');
+        commentField.remove()
+        if (commentField.value){
+            player.innerHTML = player.innerHTML + `<span class="comment-for-player">${commentField.value}</span>`
+        }
+
+        // console.log(commentField)
+
+
+    }
+    function addPlayerRemoveButton(element) {
+        const removeButton = document.createElement('span');
+        removeButton.setAttribute('onclick', 'removeExistedPlayer(this)')
+        const removeButtonText = document.createTextNode('удалить');
+        removeButton.appendChild(removeButtonText)
+        element.appendChild(removeButton) // element is div with player
+    }
+    function removePlayerRemoveButton(player) {
+        player.lastChild.remove()
+    }
+
+    function removeExistedPlayer(element) {
+        element.parentNode.remove()
+
+
+        // const body = {
+        //     'player_id'
+        // }
+    }
+    function addPlayer(event) {
+
+        let addField = document.querySelector('#player-select').cloneNode(true);
+        addField.removeAttribute('id')
+
+        let addConfirmButton = document.createElement('input');
+        addConfirmButton.setAttribute('type', 'button');
+        addConfirmButton.setAttribute('value', '+');
+        addConfirmButton.addEventListener('click', confirmPlayer)
+
+        let readyButton = document.createElement('input')
+        readyButton.setAttribute('type', 'button');
+        readyButton.setAttribute('value', 'Сохранить');
+        event.target.style.display = 'none';
+        const existedPlayers = document.querySelectorAll('.player')
+
+        for (let player of existedPlayers) {
+            addCommentField(player)
+            addPlayerRemoveButton(player)
+        }
+        readyButton.addEventListener('click', (event) => { // 1. Возможно не отправлять список действий, а получить из бд
+                                                            //2. Возможно сделать этот функционал на кнопку "+"
+            const existedPlayers = document.querySelectorAll('.player')
+            for (let player of existedPlayers) {
+                console.log(player)
+                removePlayerRemoveButton(player)
+                removeCommentField(player)
+            }
+            // removePlayerRemoveButton()
+            let acts = []
+            actions.forEach((element) => {
+                acts.push(element.getAttribute('name'))
+            })
+            const url = '{% url "statistic:initial_players" %}'
+            let body = {
+                'actions': acts,
+                'game_id': '{{ game.id }}',
+            }
+            const newPlayers = Array.from(document.querySelectorAll('.player')).slice(-count)
+            for (let player of newPlayers) {
+                body['player_id'] = player.getAttribute('data-id')
+                let response = sendAjax(url, body)
+            }
+            count = 0
+            const selectedPlayer = document.querySelector('.player-selected')
+            if (!selectedPlayer) {
+
+                if (players.children.length > 1) {
+                    const firstPlayer = players.children[1]
+                    firstPlayer.classList.add('player-selected')
+                    getJsonPlayerData(firstPlayer)
+                }
+            }
+
+            const plusButton = event.target.previousElementSibling.previousElementSibling
+            plusButton.previousElementSibling.remove()
+            plusButton.remove()
+            event.target.previousElementSibling.style.display = 'inline'
+            event.target.remove()
+
+        })
+
+        let myDiv = event.target.parentNode
+
+        myDiv.insertBefore(addField, event.target)
+        myDiv.insertBefore(addConfirmButton, event.target)
+        myDiv.appendChild(readyButton)
+    }
+
+    let buttonAddPlayer = document.querySelector('#add-player-button');
+    buttonAddPlayer.addEventListener('click', addPlayer);
+
+    //-----------------------------------------------------------------
+
+    function choosePlayerToCount(element) {
+        element.addEventListener('click', (event) => {
+            getJsonPlayerData(element)
+            let currentSelectedPlayer = document.querySelector('.player-selected');
+            if (currentSelectedPlayer) {
+                currentSelectedPlayer.classList.remove('player-selected')
+            }
+            element.classList.add('player-selected')
+        })
+    }
+
+    window.addEventListener('unload', (event) => {
+        const body = {
+            'timing': ytPlayer.getCurrentTime()
+        };
+        const url = "{% url 'statistic:on_close' %}";
+        sendAjax(url, body)
+    })
+
+
+    document.addEventListener('keydown', (event) => {
+
+        if (event.key === ' ') {
+            let command
+            let iframe = document.getElementById("myiframe")
+            const data = iframe.getAttribute('data-status')
+            let win = iframe.contentWindow;
+
+            if (data === 'stop') {
+                command = 'playVideo'
+                iframe.setAttribute('data-status', 'play')
+            } else {
+                command = 'pauseVideo'
+                iframe.setAttribute('data-status', 'stop')
+            }
+            win.postMessage('{"event":"command","func":"' + command + '","args":""}',
+                "*")
+        }
+    })
+
+
+    function eventCount(event, value=null) {
+        console.log(value)
+        const action = event.target.getAttribute('name')
+        const half = document.querySelector('.half.selected').getAttribute('data-half')
+        const player = document.querySelector('.player-selected')
+        if (!player) {
+            alert('Не выбран игрок, для которого считается статистика')
+            return false
+        }
+        const player_id = player.getAttribute('data-id')
+
+        const url = "{% url 'statistic:count_process' %}"
+        const body = {
+            'player_id': player_id,
+            'half': half,
+            'action': action,
+            'game_id': '{{ game.id }}'
+        }
+        if (value) {
+            body['value'] = value
+        }
+        console.log(body)
+        const r = sendAjax(url, body)
+
+        r.then(response => response.json()).then(data => {
+            // event.target.setAttribute('value', data['value'])
+            event.target.value = data['value']
+        })
+    }
+
+    function checkboxOn(element=null) {
+        if (!element) {
+            element = document.querySelector('[type="checkbox"]')
+        }
+        console.log(element)
+        const inputs = document.querySelectorAll('input[type="number"]');
+        if (element.checked) {
+            inputs.forEach((element) => {
+                element.style.cursor = 'pointer'
+                element.addEventListener('click', eventCount)
+                element.removeEventListener('change', editValueManually, false)
+            })
+        } else {
+            inputs.forEach((element) => {
+                element.style.cursor = 'text'
+                element.removeEventListener('click', eventCount, false)
+                element.addEventListener('change', editValueManually)
+            })
+        }
+    }
+
+    function editValueManually(event) {
+        const nv = event.target.value;
+        eventCount(event, value=nv)
+       const body = {
+
+       }
+        }
+
+
+
+    function getJsonPlayerData(element) {
+        const player_id = element.getAttribute('data-id')
+        let half;
+        const url = '{% url "statistic:player_data" %}'
+        half = document.querySelector('.half.selected');
+        // if (!half) {
+        //     half = document.querySelector('.half');
+        // }
+        //
+        // halfSelect(half)
+
+        const body = {
+            'half': half.getAttribute('data-half'),
+            'player_id': player_id,
+            'game_id': '{{ game.id }}',
+        };
+        const r = sendAjax(url, body)
+        r.then(response => response.json()).then(data => {
+
+            fillInputsByData(data)
+        })
+    }
+
+
+    function fillInputsByData(data) {
+        actions.forEach((element) => {
+            const name = element.getAttribute('name')
+            element.setAttribute('value', data['data'][name])
+        })
+    }
+
+</script>
+
+
+{% endblock %}

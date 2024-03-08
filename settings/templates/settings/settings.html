@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+
+
+
+
+
+{% block content %}
+<h3>Настройки:</h3>
+<ul>
+    <li>
+        <a href="#">Настройки аккаунта</a>
+    </li>
+    <li>
+      <a href="{% url 'settings:settings_statistic' %}">Настройки для подсчета статистики</a>
+    </li>
+
+
+</ul>
+
+
+
+
+{% endblock %}

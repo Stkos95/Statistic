@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+
+
+{% block content %}
+<h2>Настройки для подсчета статистики</h2>
+
+<ul>
+    <li>
+        <a href="{% url 'settings:manage_teams' %}">Мои команды</a>
+    </li>
+    <li>
+        <a href="{% url 'settings:manage_types' %}">Тип статистики</a>
+    </li>
+
+</ul>
+
+
+
+
+
+{% endblock %}

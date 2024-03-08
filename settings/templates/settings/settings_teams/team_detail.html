@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+
+
+{% block content %}
+<h2>Настройки команды {{ current_team.name }}</h2>
+{% if messages %}
+ {% for message in messages %}
+    {{ message }}
+ {% endfor %}
+{% endif %}
+
+<form method="post">
+    {% if create_team_form %}
+        {{ create_team_form}}
+    {% endif %}
+    {% csrf_token %}
+    {{ formset.as_ul }}
+<input type="submit" value="OK">
+</form>
+
+{% endblock %}
